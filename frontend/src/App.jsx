@@ -1,7 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
+import MobileNav from './components/MobileNav';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
@@ -12,6 +14,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Account from './pages/Account';
 import Invoice from './pages/Invoice';
+import Wishlist from './pages/Wishlist';
 import Legal from './pages/Legal';
 import NotFound from './pages/NotFound';
 import CookieConsent from './components/CookieConsent';
@@ -37,12 +40,15 @@ function AdminOnly({ children }) {
 }
 
 export default function App() {
+  const location = useLocation();
   return (
     <>
+      <ScrollToTop />
       <Navbar />
       <main className="main">
         <ErrorBoundary>
-          <Routes>
+          <div key={location.pathname} className="page-fade">
+            <Routes location={location}>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
             <Route path="/product/:id" element={<ProductDetail />} />
@@ -50,6 +56,7 @@ export default function App() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/checkout/success" element={<OrderSuccess />} />
             <Route path="/invoice/:orderId" element={<Invoice />} />
+            <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/terms" element={<Legal slug="terms" />} />
@@ -82,11 +89,13 @@ export default function App() {
               <Route path="orders" element={<AdminOrders />} />
             </Route>
             <Route path="*" element={<NotFound />} />
-          </Routes>
+            </Routes>
+          </div>
         </ErrorBoundary>
       </main>
       <Footer />
       <CookieConsent />
+      <MobileNav />
     </>
   );
 }

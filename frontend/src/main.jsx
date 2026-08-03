@@ -5,6 +5,7 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { ToastProvider } from './context/ToastContext';
+import { WishlistProvider } from './context/WishlistContext';
 import { loadConfig } from './lib/api';
 import './styles.css';
 
@@ -15,7 +16,9 @@ loadConfig().then(() => {
         <AuthProvider>
           <CartProvider>
             <ToastProvider>
-              <App />
+              <WishlistProvider>
+                <App />
+              </WishlistProvider>
             </ToastProvider>
           </CartProvider>
         </AuthProvider>

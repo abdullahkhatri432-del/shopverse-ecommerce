@@ -5,12 +5,14 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 ## Features
 
 - **Product catalog** — browse, search (debounced), filter by category, price range and in-stock, and sort products
-- **Product details** — images, descriptions, stock status, **country of origin**, GST-inclusive pricing, quantity picker
+- **Product details** — images, descriptions, stock status, **country of origin**, GST-inclusive pricing, quantity picker, breadcrumbs, and **verified-purchase reviews & star ratings**
 - **Shopping cart** — add/remove items, change quantities, persisted in `localStorage` **and synced to the server** (merged when you sign in, so abandoned carts survive across devices)
 - **Checkout** — shipping details, optional GSTIN/billing-state for GST invoices, pincode delivery check, order summary, **Cash on Delivery**, and **price-sync protection** (you're alerted if a price changed before you pay)
 - **Payments** — Razorpay Checkout (test/live) with server-side signature verification, **COD**, and a mock checkout that is **disabled in production**
 - **GST invoices** — printable + **PDF download** tax invoices with CGST/SGST/IGST breakdown, invoice numbers, and buyer/seller details
 - **Order tracking** — status stepper (placed → packed → shipped → out for delivery → delivered), estimated delivery dates, order cancellation, and **return/refund requests** within 7 days of delivery
+- **Wishlist & recently viewed** — save products for later (wishlist page + heart on every card), and a "Recently viewed" row on the home page
+- **User-friendly polish** — loading skeletons, friendly empty states, page transitions, breadcrumbs, hover micro-interactions, a **mobile bottom nav**, focus-visible + reduced-motion accessibility, and a trust strip (free delivery, COD, returns)
 - **Legal & compliance** — Terms, Privacy (DPDP-ready), Refund, Shipping, Cancellation, Grievance Officer, Seller Info and Contact pages, grievance officer details in the footer, plus a cookie/local-storage consent banner
 - **User accounts** — secure **Google sign-in** (verified, duplicate-free) and view order history + GST invoices
 - **Admin panel** — add/edit/delete products (with image upload + country of origin), manage categories from a fixed dropdown so sellers can't mistype them, and manage order statuses (incl. returns & refunds)
@@ -175,6 +177,8 @@ admin marks them **delivered**. They never touch a payment gateway.
 | POST   | `/api/orders/:id/confirm`       | Mark order paid (gated)         | –        |
 | POST   | `/api/orders/:id/cancel`        | Cancel order, restock           | –        |
 | POST   | `/api/orders/:id/return`        | Request a return                | –        |
+| GET    | `/api/products/:id/reviews`     | Reviews + rating summary        | –        |
+| POST   | `/api/products/:id/reviews`     | Review a purchased product      | User     |
 | GET    | `/api/orders/:id/invoice`       | GST invoice for a paid order    | –        |
 | GET    | `/api/orders/:id/invoice.pdf`   | PDF download of the invoice     | –        |
 | GET    | `/api/orders/my`                | Current user's orders           | User     |

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, formatPrice } from '../lib/api';
 import OrderTracking from '../components/OrderTracking';
+import EmptyState from '../components/EmptyState';
+import Skeleton from '../components/Skeleton';
 import Seo from '../components/Seo';
 
 const STATUS_LABELS = {
@@ -64,14 +66,24 @@ export default function Account() {
       <Seo title="Your orders - ShopVerse" description="Track your ShopVerse orders and invoices." />
       <h1 className="page-title">Your orders</h1>
       {loading ? (
-        <div className="page-loading">Loading orders...</div>
+        <div className="orders-list" aria-hidden="true">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div className="order-card" key={i}>
+              <Skeleton style={{ width: '40%', height: 18 }} />
+              <Skeleton style={{ width: '100%', height: 60, marginTop: 14 }} />
+              <Skeleton style={{ width: '70%', height: 14, marginTop: 14 }} />
+            </div>
+          ))}
+        </div>
       ) : orders.length === 0 ? (
-        <div className="empty-state">
-          <p>You haven't placed any orders yet.</p>
-          <Link to="/products" className="btn btn-primary">
+        <EmptyState
+          title="You have not placed any orders yet"
+          subtitle="When you place an order, you can track it, download its GST invoice and request returns here."
+        >
+          <Link to="/products" className="btn btn-primary btn-lg">
             Start shopping
           </Link>
-        </div>
+        </EmptyState>
       ) : (
         <div className="orders-list">
           {orders.map((o) => (

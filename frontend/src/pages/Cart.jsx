@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import { api, formatPrice } from '../lib/api';
+import EmptyState from '../components/EmptyState';
 import Seo from '../components/Seo';
 
 export default function Cart() {
   const { items, count, subtotal, setQuantity, remove, clear } = useCart();
+  const { items: wishItems } = useWishlist();
   const [pincode, setPincode] = useState('');
   const [checking, setChecking] = useState(false);
   const [delivery, setDelivery] = useState(null);
@@ -13,13 +16,27 @@ export default function Cart() {
 
   if (items.length === 0) {
     return (
-      <div className="container section empty-state">
+      <div className="container section">
         <Seo title="Your cart - ShopVerse" description="Your cart is empty." />
-        <h1>Your cart is empty</h1>
-        <p>Looks like you haven't added anything yet.</p>
-        <Link to="/products" className="btn btn-primary btn-lg">
-          Start shopping
-        </Link>
+        <EmptyState
+          title="Your cart is empty"
+          subtitle={
+            wishItems.length > 0
+              ? 'You saved some items for later — move them to your cart.'
+              : 'Looks like you have not added anything yet.'
+          }
+        >
+          <div className="empty-actions">
+            <Link to={wishItems.length > 0 ? '/wishlist' : '/products'} className="btn btn-primary btn-lg">
+              {wishItems.length > 0 ? 'Go to wishlist' : 'Start shopping'}
+            </Link>
+            {wishItems.length > 0 && (
+              <Link to="/products" className="btn btn-outline btn-lg">
+                Browse products
+              </Link>
+            )}
+          </div>
+        </EmptyState>
       </div>
     );
   }

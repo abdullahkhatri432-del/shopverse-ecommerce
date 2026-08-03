@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import ProductCard from '../components/ProductCard';
+import Skeleton from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 import Seo from '../components/Seo';
 
 export default function Products() {
@@ -74,6 +76,17 @@ export default function Products() {
         title="Shop - ShopVerse"
         description="Browse electronics, fashion, home goods and more at ShopVerse."
       />
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <Link to="/">Home</Link>
+        <span aria-hidden="true">/</span>
+        <span className="breadcrumbs-current">Shop</span>
+        {category && (
+          <>
+            <span aria-hidden="true">/</span>
+            <span className="breadcrumbs-current">{category}</span>
+          </>
+        )}
+      </nav>
       <h1 className="page-title">Shop</h1>
 
       <form onSubmit={handleSearchSubmit} className="search-bar">
@@ -161,18 +174,31 @@ export default function Products() {
         </aside>
 
         <div className="shop-results">
-          <p className="results-count">
+          <p className="results-count" aria-live="polite">
             {loading ? 'Loading...' : `${total} product${total === 1 ? '' : 's'} found`}
           </p>
           {loading ? (
-            <div className="page-loading">Loading products...</div>
+            <div className="product-grid" aria-hidden="true">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div className="product-card" key={i}>
+                  <Skeleton style={{ aspectRatio: '4 / 3' }} />
+                  <div className="product-body">
+                    <Skeleton style={{ width: '40%', height: 12 }} />
+                    <Skeleton style={{ width: '80%', height: 16 }} />
+                    <Skeleton style={{ width: '60%', height: 16 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : products.length === 0 ? (
-            <div className="empty-state">
-              <p>No products match your filters.</p>
+            <EmptyState
+              title="No products found"
+              subtitle="Try adjusting your search or filters."
+            >
               <button className="btn btn-primary" onClick={() => setSearchParams({})}>
                 Clear filters
               </button>
-            </div>
+            </EmptyState>
           ) : (
             <div className="product-grid">
               {products.map((p) => (
