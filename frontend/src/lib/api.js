@@ -42,9 +42,36 @@ export const api = {
   del: (path, opts) => request(path, { method: 'DELETE', ...opts }),
 };
 
+let siteConfig = {
+  paymentProvider: 'mock',
+  currency: 'INR',
+  razorpayKeyId: '',
+};
+
+export async function loadConfig() {
+  try {
+    const data = await api.get('/checkout/config');
+    if (data) siteConfig = { ...siteConfig, ...data };
+  } catch {
+    // keep defaults if the backend is unavailable
+  }
+  return siteConfig;
+}
+
+export function getConfig() {
+  return siteConfig;
+}
+
 export function formatPrice(cents) {
+  const value = (cents ?? 0) / 100;
+  if (siteConfig.currency === 'INR') {
+    return '₹' + value.toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-  }).format((cents ?? 0) / 100);
+  }).format(value);
 }

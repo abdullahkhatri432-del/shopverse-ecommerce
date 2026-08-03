@@ -8,7 +8,7 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 - **Product details** — images, descriptions, stock status, quantity picker
 - **Shopping cart** — add/remove items, change quantities, persisted in `localStorage`
 - **Checkout** — shipping details, order summary, and payment
-- **Payments** — Stripe Checkout integration (test mode) with a built-in **mock checkout** fallback that works with zero configuration
+- **Payments** — Razorpay Checkout (test mode) with a built-in **mock checkout** fallback that works with zero configuration
 - **User accounts** — register, log in (JWT), and view order history
 - **Admin panel** — add/edit/delete products, manage order statuses
 - **SQLite database** — no external database server required (Node's built-in `node:sqlite`)
@@ -21,7 +21,7 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 | Backend  | Node.js, Express                   |
 | Database | SQLite (via built-in `node:sqlite`)|
 | Auth     | JWT + bcrypt                       |
-| Payments | Stripe (optional, test mode)       |
+| Payments | Razorpay (optional, test mode)       |
 
 ## Project structure
 
@@ -37,7 +37,7 @@ ecommerce/
 │   │       ├── auth.js        # register / login / me
 │   │       ├── products.js    # catalog, search, filters
 │   │       ├── orders.js      # create / confirm / my orders
-│   │       ├── checkout.js    # Stripe or mock checkout
+│   │       ├── checkout.js    # Razorpay or mock checkout
 │   │       └── admin.js       # product & order management
 │   └── .env.example
 └── frontend/
@@ -86,21 +86,21 @@ Any user you register gets the `customer` role by default.
 
 ## Payments
 
-By default the store uses a **mock checkout**: placing an order immediately creates it and marks it paid, with a note that no real payment was taken.
+By default the store uses a **mock checkout**: placing an order immediately creates it and confirms it, with a note that no real payment was taken.
 
-To enable **Stripe Checkout** (test mode):
+To enable **Razorpay Checkout** (test mode):
 
-1. Create an account at https://stripe.com and grab your **test secret key** (`sk_test_...`) from the dashboard.
-2. Set it in `backend/.env`:
+1. Create an account at https://razorpay.com and grab your **test key pair** (`key_id` / `key_secret`, e.g. `rzp_test_...`) from **Dashboard → Settings → API Keys**.
+2. Set them in `backend/.env`:
 
    ```
-   STRIPE_SECRET_KEY=sk_test_...
-   FRONTEND_URL=http://localhost:5173
+   RAZORPAY_KEY_ID=rzp_test_...
+   RAZORPAY_KEY_SECRET=...
    ```
 
-3. Restart the backend. The checkout flow will now redirect to Stripe's hosted payment page (use test card `4242 4242 4242 4242`).
+3. Restart the backend. The checkout now opens Razorpay's hosted checkout modal. Pay with the test card `4111 1111 1111 1111`, any future expiry date and any CVV.
 
-Orders are confirmed when Stripe redirects back to the success page.
+The order is confirmed only after the payment signature is verified server-side (`POST /api/checkout/verify`), so a fake payment can't be marked as paid. Failed or cancelled payments leave the order as `pending`.
 
 ## API overview
 
@@ -114,6 +114,8 @@ Orders are confirmed when Stripe redirects back to the success page.
 | GET    | `/api/products/categories`      | Distinct categories             | –        |
 | GET    | `/api/products/featured`        | Featured products               | –        |
 | POST   | `/api/checkout`                 | Create order + start payment    | –        |
+| GET    | `/api/checkout/config`          | Currency & payment provider info| –        |
+| POST   | `/api/checkout/verify`          | Verify Razorpay payment signature| –        |
 | POST   | `/api/orders/:id/confirm`       | Mark order paid                 | –        |
 | GET    | `/api/orders/my`                | Current user's orders           | User     |
 | POST   | `/api/admin/products`           | Create product                  | Admin    |
@@ -126,14 +128,17 @@ Orders are confirmed when Stripe redirects back to the success page.
 
 `backend/.env`:
 
-| Variable          | Default                   | Description                          |
-| ----------------- | ------------------------- | ------------------------------------ |
-| `PORT`            | `4000`                    | API port                             |
-| `JWT_SECRET`      | `dev-secret-change-me`    | JWT signing key — **change in prod** |
-| `FRONTEND_URL`    | `http://localhost:5173`   | Frontend origin for Stripe redirects |
-| `ADMIN_EMAIL`     | `admin@example.com`       | Admin account used by `npm run seed` |
-| `ADMIN_PASSWORD`  | `admin123`                | Admin password used by `npm run seed`|
-| `STRIPE_SECRET_KEY`| *(empty)*                | Enables Stripe; empty = mock checkout|
+| Variable            | Default                   | Description                          |
+| ------------------- | ------------------------- | ------------------------------------ |
+| `PORT`              | `4000`                    | API port                             |
+| `JWT_SECRET`        | `dev-secret-change-me`    | JWT signing key — **change in prod** |
+| `CURRENCY`          | `INR`                     | Payment currency (`INR` or `USD`)    |
+| `ADMIN_EMAIL`       | `admin@example.com`       | Admin account used by `npm run seed` |
+| `ADMIN_PASSWORD`    | `admin123`                | Admin password used by `npm run seed`|
+| `RAZORPAY_KEY_ID`   | *(empty)*                 | Razorpay test key; enables Razorpay  |
+| `RAZORPAY_KEY_SECRET`| *(empty)*                | Razorpay secret (with key id above)  |
+
+> Prices are stored in the smallest unit of `CURRENCY` (paise/cents). Seed prices such as `19900` display as ₹199.00 by default.
 
 ## Production build
 
@@ -142,7 +147,7 @@ cd frontend
 npm run build        # outputs to frontend/dist
 ```
 
-Serve `frontend/dist` as static files and point the `/api` paths at the backend (the Vite proxy is dev-only). Update `FRONTEND_URL` in `backend/.env` to your real domain, set a strong `JWT_SECRET`, and add real Stripe keys.
+Serve `frontend/dist` as static files and point the `/api` paths at the backend (the Vite proxy is dev-only). Set a strong `JWT_SECRET`, choose `CURRENCY`, and add your live Razorpay keys.
 
 ## License
 

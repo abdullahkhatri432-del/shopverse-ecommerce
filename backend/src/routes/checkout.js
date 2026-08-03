@@ -1,9 +1,33 @@
 const express = require('express');
+const crypto = require('node:crypto');
 const { db } = require('../db');
 
 const router = express.Router();
 
-router.post('/', (req, res) => {
+const currency = process.env.CURRENCY || 'INR';
+
+function razorpayEnabled() {
+  return !!(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
+}
+
+function getRazorpay() {
+  const Razorpay = require('razorpay');
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+}
+
+router.get('/config', (req, res) => {
+  res.json({
+    paymentProvider: razorpayEnabled() ? 'razorpay' : 'mock',
+    currency,
+    razorpayEnabled: razorpayEnabled(),
+    razorpayKeyId: process.env.RAZORPAY_KEY_ID || '',
+  });
+});
+
+router.post('/', async (req, res) => {
   const { items, customerName, customerEmail, customerAddress } = req.body || {};
 
   if (!Array.isArray(items) || items.length === 0) {
@@ -46,10 +70,11 @@ router.post('/', (req, res) => {
 
   const insertOrder = db.prepare(`
     INSERT INTO orders (user_id, total_cents, status, payment_method, customer_name, customer_email, customer_address)
-    VALUES (NULL, ?, 'pending', 'checkout', ?, ?, ?)
+    VALUES (NULL, ?, 'pending', ?, ?, ?, ?)
   `);
   const orderId = insertOrder.run(
     totalCents,
+    razorpayEnabled() ? 'razorpay' : 'mock',
     String(customerName).trim(),
     String(customerEmail).trim(),
     String(customerAddress || '').trim()
@@ -63,40 +88,66 @@ router.post('/', (req, res) => {
     insertItem.run(orderId, i.productId, i.name, i.priceCents, i.quantity);
   }
 
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-
-  if (stripeKey) {
-    const stripe = require('stripe')(stripeKey);
-    return stripe.checkout.sessions
-      .create({
-        mode: 'payment',
-        success_url: `${frontendUrl}/checkout/success?order=${orderId}`,
-        cancel_url: `${frontendUrl}/checkout?cancel=1`,
-        line_items: orderItems.map((i) => ({
-          price_data: {
-            currency: 'usd',
-            product_data: { name: i.name },
-            unit_amount: i.priceCents,
-          },
-          quantity: i.quantity,
-        })),
-        customer_email: String(customerEmail).trim(),
-        metadata: { order_id: String(orderId) },
-      })
-      .then((session) => {
-        res.status(201).json({ orderId, paymentUrl: session.url, paymentMethod: 'stripe' });
-      })
-      .catch((err) => {
-        res.status(500).json({ error: 'Could not create Stripe session: ' + err.message });
-      });
+  if (!razorpayEnabled()) {
+    return res.status(201).json({
+      orderId,
+      paymentMethod: 'mock',
+      amount: totalCents,
+      currency,
+    });
   }
 
-  res.status(201).json({
-    orderId,
-    paymentUrl: `${frontendUrl}/checkout/success?order=${orderId}&mock=1`,
-    paymentMethod: 'mock',
-  });
+  try {
+    const razorpay = getRazorpay();
+    const rzpOrder = await razorpay.orders.create({
+      amount: totalCents,
+      currency,
+      receipt: `shopverse_${orderId}`,
+      notes: { order_id: String(orderId) },
+    });
+    res.status(201).json({
+      orderId,
+      paymentMethod: 'razorpay',
+      razorpayOrderId: rzpOrder.id,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      amount: totalCents,
+      currency,
+    });
+  } catch (err) {
+    const detail =
+      (err && err.error && err.error.description) ||
+      (err && err.error && err.error.reason) ||
+      (err && err.message) ||
+      'unknown error';
+    res.status(500).json({ error: 'Could not create Razorpay order: ' + detail });
+  }
+});
+
+router.post('/verify', async (req, res) => {
+  const { orderId, razorpayOrderId, paymentId, signature } = req.body || {};
+
+  if (!orderId || !razorpayOrderId || !paymentId || !signature) {
+    return res.status(400).json({ error: 'orderId, razorpayOrderId, paymentId and signature are required' });
+  }
+  if (!razorpayEnabled()) {
+    return res.status(400).json({ error: 'Razorpay is not configured' });
+  }
+
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+
+  const expected = crypto
+    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+    .update(`${razorpayOrderId}|${paymentId}`)
+    .digest('hex');
+
+  if (expected !== signature) {
+    return res.status(400).json({ error: 'Invalid payment signature' });
+  }
+
+  db.prepare("UPDATE orders SET status = 'paid', payment_method = 'razorpay' WHERE id = ?").run(orderId);
+  const updated = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+  res.json({ ok: true, orderId: updated.id, status: updated.status });
 });
 
 module.exports = router;
