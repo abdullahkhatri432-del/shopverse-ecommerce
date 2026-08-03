@@ -86,6 +86,8 @@ function buildOrderObject(order) {
     eta: etaFor(order),
     returnEligible: isReturnEligible(order),
     returnStatus: db.prepare('SELECT status FROM order_returns WHERE order_id = ? ORDER BY id DESC LIMIT 1').get(order.id)?.status || null,
+    carrier: order.carrier || null,
+    trackingNumber: order.tracking_number || null,
     items,
   };
 }

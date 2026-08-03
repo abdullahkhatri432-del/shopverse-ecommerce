@@ -30,6 +30,7 @@ const STATUS_LABELS = {
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [trackingInput, setTrackingInput] = useState({});
   const { push } = useToast();
 
   const load = () => {
@@ -43,14 +44,87 @@ export default function AdminOrders() {
 
   useEffect(load, []);
 
-  const updateStatus = async (orderId, status) => {
+  const updateStatus = async (orderId, status, carrier, trackingNumber) => {
     try {
-      await api.patch(`/admin/orders/${orderId}/status`, { status }, { auth: true });
+      const payload = { status };
+      if (status === 'shipped') {
+        payload.carrier = carrier;
+        payload.tracking_number = trackingNumber;
+      }
+      await api.patch(`/admin/orders/${orderId}/status`, payload, { auth: true });
       push(`Order #${orderId} marked as ${STATUS_LABELS[status]}`);
       load();
     } catch (err) {
       push(err.message, 'error');
     }
+  };
+
+  const handleStatusChange = (order, newStatus) => {
+    if (newStatus === 'shipped' && (!order.carrier || !order.trackingNumber)) {
+      // Open tracking input modal
+      setTrackingInput({ orderId: order.id, carrier: '', trackingNumber: '' });
+      return;
+    }
+    updateStatus(order.id, newStatus);
+  };
+
+  const confirmShipped = (data) => {
+    updateStatus(data.orderId, 'shipped', data.carrier, data.trackingNumber);
+    setTrackingInput({});
+  };
+
+  const renderStatusSelect = (order) => {
+    if (trackingInput.orderId === order.id) {
+      return (
+        <div className="tracking-input-modal">
+          <div className="tracking-input-content">
+            <h4>Enter tracking details for Order #{order.id}</h4>
+            <label className="field">
+              <span>Carrier (e.g., Delhivery, BlueDart)</span>
+              <input
+                type="text"
+                value={trackingInput.carrier}
+                onChange={(e) => setTrackingInput({ ...trackingInput, carrier: e.target.value })}
+                placeholder="Delhivery"
+                required
+                autoFocus
+              />
+            </label>
+            <label className="field">
+              <span>Tracking / AWB Number</span>
+              <input
+                type="text"
+                value={trackingInput.trackingNumber}
+                onChange={(e) => setTrackingInput({ ...trackingInput, trackingNumber: e.target.value })}
+                placeholder="AWB123456789"
+                required
+              />
+            </label>
+            <div className="row-actions">
+              <button className="btn btn-primary" onClick={() => confirmShipped(trackingInput)}>
+                Confirm Shipped
+              </button>
+              <button className="btn btn-ghost" onClick={() => setTrackingInput({})}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <select
+        value={order.status}
+        className="select-inline"
+        onChange={(e) => handleStatusChange(order, e.target.value)}
+      >
+        {STATUSES.map((s) => (
+          <option key={s} value={s}>
+            {STATUS_LABELS[s]}
+          </option>
+        ))}
+      </select>
+    );
   };
 
   return (
@@ -75,17 +149,7 @@ export default function AdminOrders() {
                 </div>
                 <div className="order-head-right">
                   <span className="order-total">{formatPrice(o.totalCents)}</span>
-                  <select
-                    value={o.status}
-                    className="select-inline"
-                    onChange={(e) => updateStatus(o.id, e.target.value)}
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s} value={s}>
-                        {STATUS_LABELS[s]}
-                      </option>
-                    ))}
-                  </select>
+                  {renderStatusSelect(o)}
                 </div>
               </div>
               <div className="order-items">
@@ -101,8 +165,19 @@ export default function AdminOrders() {
               {o.customerAddress && (
                 <p className="order-address">Ship to: {o.customerAddress}</p>
               )}
+              {(o.carrier || o.trackingNumber) && (
+                <div className="order-tracking-info">
+                  <strong>Tracking:</strong>
+                  <span>{o.carrier} - {o.trackingNumber}</span>
+                </div>
+              )}
             </div>
           ))}
+        </div>
+      )}
+      {trackingInput.orderId && (
+        <div className="modal-overlay" onClick={() => setTrackingInput({})}>
+          {renderStatusSelect(orders.find((o) => o.id === trackingInput.orderId))}
         </div>
       )}
     </div>

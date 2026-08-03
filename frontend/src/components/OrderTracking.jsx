@@ -15,7 +15,7 @@ const STEP_INDEX = {
   delivered: 4,
 };
 
-export default function OrderTracking({ status }) {
+export default function OrderTracking({ status, carrier, trackingNumber }) {
   if (status === 'cancelled') {
     return <p className="notice notice-warning">This order was cancelled.</p>;
   }
@@ -29,18 +29,29 @@ export default function OrderTracking({ status }) {
   }
 
   const active = STEP_INDEX[status] ?? 0;
+  const showTracking = carrier || trackingNumber;
+
   return (
-    <ol className="tracking-steps">
-      {STEPS.map((step, i) => {
-        const done = i < active || status === 'delivered';
-        const current = i === active && status !== 'delivered';
-        return (
-          <li key={step.key} className={`tracking-step ${done ? 'done' : ''} ${current ? 'current' : ''}`}>
-            <span className="tracking-dot">{done ? '✓' : i + 1}</span>
-            <span className="tracking-label">{step.label}</span>
-          </li>
-        );
-      })}
-    </ol>
+    <>
+      <ol className="tracking-steps">
+        {STEPS.map((step, i) => {
+          const done = i < active || status === 'delivered';
+          const current = i === active && status !== 'delivered';
+          return (
+            <li key={step.key} className={`tracking-step ${done ? 'done' : ''} ${current ? 'current' : ''}`}>
+              <span className="tracking-dot">{done ? '✓' : i + 1}</span>
+              <span className="tracking-label">{step.label}</span>
+            </li>
+          );
+        })}
+      </ol>
+      {showTracking && status !== 'pending' && status !== 'paid' && status !== 'packed' && (
+        <div className="tracking-details">
+          <h4>Shipment Details</h4>
+          {carrier && <p><strong>Carrier:</strong> {carrier}</p>}
+          {trackingNumber && <p><strong>Tracking Number:</strong> {trackingNumber}</p>}
+        </div>
+      )}
+    </>
   );
 }

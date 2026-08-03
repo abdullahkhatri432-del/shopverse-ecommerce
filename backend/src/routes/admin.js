@@ -192,7 +192,7 @@ router.get('/orders', (req, res) => {
 });
 
 router.patch('/orders/:id/status', (req, res) => {
-  const { status } = req.body || {};
+  const { status, carrier, tracking_number } = req.body || {};
   const allowed = [
     'pending',
     'paid',
@@ -207,6 +207,9 @@ router.patch('/orders/:id/status', (req, res) => {
   ];
   if (!allowed.includes(status)) {
     return res.status(400).json({ error: `Status must be one of: ${allowed.join(', ')}` });
+  }
+  if (status === 'shipped' && (!carrier || !tracking_number)) {
+    return res.status(400).json({ error: 'Carrier and tracking number are required when marking as shipped' });
   }
   const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Order not found' });
@@ -225,7 +228,16 @@ router.patch('/orders/:id/status', (req, res) => {
     }
   }
 
-  db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, existing.id);
+  if (status === 'shipped') {
+    db.prepare('UPDATE orders SET status = ?, carrier = ?, tracking_number = ? WHERE id = ?').run(
+      status,
+      String(carrier).trim(),
+      String(tracking_number).trim(),
+      existing.id
+    );
+  } else {
+    db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, existing.id);
+  }
   if (status === 'paid' && !existing.invoice_number) {
     const { generateInvoiceNumber } = require('../gst');
     const invoiceNumber = generateInvoiceNumber(existing.id);

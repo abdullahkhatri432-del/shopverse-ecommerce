@@ -130,6 +130,8 @@ const orderMigrations = {
   invoice_number: 'ALTER TABLE orders ADD COLUMN invoice_number TEXT',
   discount_cents: 'ALTER TABLE orders ADD COLUMN discount_cents INTEGER NOT NULL DEFAULT 0',
   promo_code: "ALTER TABLE orders ADD COLUMN promo_code TEXT NOT NULL DEFAULT ''",
+  carrier: "ALTER TABLE orders ADD COLUMN carrier TEXT NOT NULL DEFAULT ''",
+  tracking_number: "ALTER TABLE orders ADD COLUMN tracking_number TEXT NOT NULL DEFAULT ''",
 };
 for (const [col, sql] of Object.entries(orderMigrations)) {
   if (!orderColumns.includes(col)) db.exec(sql);

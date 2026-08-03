@@ -22,6 +22,8 @@ export default function AdminProducts() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [stockEditing, setStockEditing] = useState(null);
+  const [stockValue, setStockValue] = useState('');
   const { push } = useToast();
 
   const load = () => {
@@ -120,6 +122,44 @@ export default function AdminProducts() {
     }
   };
 
+  const startStockEdit = (p) => {
+    setStockEditing(p.id);
+    setStockValue(p.stock.toString());
+  };
+
+  const saveStock = async (p) => {
+    const newStock = Math.max(0, parseInt(stockValue) || 0);
+    if (newStock === p.stock) {
+      setStockEditing(null);
+      return;
+    }
+    try {
+      await api.put(`/admin/products/${p.id}`, { ...p, stock: newStock }, { auth: true });
+      push(`Stock updated to ${newStock}`);
+      load();
+    } catch (err) {
+      push(err.message, 'error');
+    }
+    setStockEditing(null);
+  };
+
+  const cancelStockEdit = () => {
+    setStockEditing(null);
+  };
+
+  const toggleStock = async (p) => {
+    const newStock = p.stock > 0 ? 0 : 1;
+    try {
+      await api.put(`/admin/products/${p.id}`, { ...p, stock: newStock }, { auth: true });
+      push(newStock > 0 ? 'Marked in stock' : 'Marked out of stock');
+      load();
+    } catch (err) {
+      push(err.message, 'error');
+    }
+  };
+
+  const isLowStock = (stock) => stock > 0 && stock < 5;
+
   return (
     <div className="admin-content">
       <div className="admin-grid">
@@ -146,7 +186,7 @@ export default function AdminProducts() {
               </thead>
               <tbody>
                 {products.map((p) => (
-                  <tr key={p.id}>
+                  <tr key={p.id} className={isLowStock(p.stock) ? 'low-stock-row' : ''}>
                     <td>
                       <div className="table-product">
                         <img src={p.imageUrl} alt="" width="40" height="40" />
@@ -155,7 +195,47 @@ export default function AdminProducts() {
                     </td>
                     <td>{p.category}</td>
                     <td>{formatPrice(p.priceCents)}</td>
-                    <td>{p.stock}</td>
+                    <td>
+                      {stockEditing === p.id ? (
+                        <div className="stock-inline-edit">
+                          <input
+                            type="number"
+                            min="0"
+                            value={stockValue}
+                            onChange={(e) => setStockValue(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && saveStock(p)}
+                            onBlur={() => saveStock(p)}
+                            autoFocus
+                            className="stock-input"
+                          />
+                          <button className="btn btn-sm btn-primary" onClick={() => saveStock(p)}>Save</button>
+                          <button className="btn btn-sm btn-ghost" onClick={cancelStockEdit}>Cancel</button>
+                        </div>
+                      ) : (
+                        <div className="stock-display">
+                          <span className={isLowStock(p.stock) ? 'low-stock-badge' : ''}>
+                            {p.stock}
+                            {isLowStock(p.stock) && <span className="low-stock-label">Low</span>}
+                          </span>
+                          <div className="stock-actions">
+                            <button
+                              className="btn btn-sm btn-ghost"
+                              onClick={() => startStockEdit(p)}
+                              title="Edit stock"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              className={`btn btn-sm btn-ghost ${p.stock > 0 ? '' : 'btn-outline'}`}
+                              onClick={() => toggleStock(p)}
+                              title={p.stock > 0 ? 'Mark out of stock' : 'Mark in stock (1)'}
+                            >
+                              {p.stock > 0 ? '📦' : '✅'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </td>
                     <td>{p.featured ? '✓' : ''}</td>
                     <td>
                       <div className="row-actions">

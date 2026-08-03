@@ -101,12 +101,19 @@ export default function Account() {
                 </div>
               </div>
 
-              {o.status !== 'cancelled' && <OrderTracking status={o.status} />}
+              {o.status !== 'cancelled' && <OrderTracking status={o.status} carrier={o.carrier} trackingNumber={o.trackingNumber} />}
 
               {o.eta && ['pending', 'paid', 'packed', 'shipped', 'out_for_delivery'].includes(o.status) && (
                 <p className="order-eta">
                   Estimated delivery: {o.eta.min} – {o.eta.max}
                 </p>
+              )}
+
+              {(o.carrier || o.trackingNumber) && (
+                <div className="order-tracking-info customer">
+                  <strong>Tracking:</strong>
+                  <span>{o.carrier} — {o.trackingNumber}</span>
+                </div>
               )}
 
               <div className="order-items">
