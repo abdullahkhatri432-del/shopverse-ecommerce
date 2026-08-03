@@ -1658,16 +1658,335 @@ textarea:focus {
 }
 
 .pincode-check {
-  margin-top: 14px;
+  margin-top: 18px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--surface) 0%, #f8fafc 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .pincode-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.pincode-row .field {
+  flex: 1;
+  margin: 0;
+}
+
+.pincode-row label.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pincode-row label.field span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .pincode-row input {
   flex: 1;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  background: var(--bg);
+}
+
+.pincode-row input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.pincode-row input:invalid:not(:placeholder-shown) {
+  border-color: var(--danger);
+}
+
+.pincode-row input::placeholder {
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  font-weight: 400;
+}
+
+.pincode-row .btn {
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 10px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.pincode-row .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pincode-result {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  animation: slideDown 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pincode-result.success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.pincode-result.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.pincode-result.warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.pincode-result-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.pincode-result.success .pincode-result-icon {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+.pincode-result.error .pincode-result-icon {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.pincode-result.warning .pincode-result-icon {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+.pincode-result-text {
+  flex: 1;
+  line-height: 1.5;
+}
+
+.pincode-result-text strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.pincode-result-text span {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- PDP pincode + tabs ---------- */
+.pincode-eta {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--surface) 0%, #f8fafc 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.pincode-eta-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.pincode-eta .field {
+  flex: 1;
+  min-width: 200px;
+  margin: 0;
+}
+
+.pincode-eta label.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pincode-eta label.field span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pincode-eta input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  background: var(--bg);
+}
+
+.pincode-eta input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.pincode-eta input:invalid:not(:placeholder-shown) {
+  border-color: var(--danger);
+}
+
+.pincode-eta input::placeholder {
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  font-weight: 400;
+}
+
+.pincode-eta .btn {
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 10px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.pincode-eta .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pincode-eta-result {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  animation: slideDown 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pincode-eta-result.success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.pincode-eta-result.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.pincode-eta-result.warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.pincode-eta-result-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.pincode-eta-result.success .pincode-eta-result-icon {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+.pincode-eta-result.error .pincode-eta-result-icon {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.pincode-eta-result.warning .pincode-eta-result-icon {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+.pincode-eta-result-text {
+  flex: 1;
+  line-height: 1.5;
+  min-width: 200px;
+}
+
+.pincode-eta-result-text strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.pincode-eta-result-text span {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+@media (max-width: 640px) {
+  .pincode-check, .pincode-eta {
+    padding: 14px;
+  }
+  .pincode-row, .pincode-eta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pincode-row .btn, .pincode-eta .btn {
+    width: 100%;
+  }
+  .pincode-result, .pincode-eta-result {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+  .pincode-result-icon, .pincode-eta-result-icon {
+    align-self: flex-start;
+  }
 }
 
 .payment-methods {
@@ -3300,10 +3619,6 @@ textarea:focus {
   margin: 10px 0 0;
   font-size: 13.5px;
   color: var(--muted);
-}
-
-.pincode-eta-result strong {
-  color: var(--success);
 }
 
 .pdp-tabs {
