@@ -11,6 +11,9 @@ import OrderSuccess from './pages/OrderSuccess';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Account from './pages/Account';
+import Invoice from './pages/Invoice';
+import Legal from './pages/Legal';
+import CookieConsent from './components/CookieConsent';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminCategories from './pages/admin/AdminCategories';
@@ -43,8 +46,16 @@ export default function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<OrderSuccess />} />
+          <Route path="/invoice/:orderId" element={<Invoice />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/terms" element={<Legal slug="terms" />} />
+          <Route path="/privacy" element={<Legal slug="privacy" />} />
+          <Route path="/refunds" element={<Legal slug="refunds" />} />
+          <Route path="/shipping" element={<Legal slug="shipping" />} />
+          <Route path="/cancellation" element={<Legal slug="cancellation" />} />
+          <Route path="/grievance" element={<Legal slug="grievance" />} />
+          <Route path="/seller" element={<Legal slug="seller" />} />
           <Route
             path="/account"
             element={
@@ -70,6 +81,7 @@ export default function App() {
         </Routes>
       </main>
       <Footer />
+      <CookieConsent />
     </>
   );
 }

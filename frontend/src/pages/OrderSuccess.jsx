@@ -44,6 +44,11 @@ export default function OrderSuccess() {
         <Link to="/products" className="btn btn-primary">
           Continue shopping
         </Link>
+        {order && order.status === 'paid' && (
+          <Link to={`/invoice/${order.id}`} className="btn btn-outline">
+            View GST invoice
+          </Link>
+        )}
         <Link to="/account" className="btn btn-outline">
           View your orders
         </Link>

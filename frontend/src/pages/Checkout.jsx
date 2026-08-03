@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { api, formatPrice } from '../lib/api';
+import { api, formatPrice, getStore } from '../lib/api';
+import { INDIA_STATES } from '../lib/india-states';
 import { useToast } from '../context/ToastContext';
 
 function loadRazorpayScript() {
@@ -27,9 +28,13 @@ export default function Checkout() {
     name: user?.name || '',
     email: user?.email || '',
     address: '',
+    companyName: '',
+    gstin: '',
+    billingState: '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const store = getStore();
 
   if (items.length === 0) {
     return (
@@ -55,7 +60,7 @@ export default function Checkout() {
       key: data.razorpayKeyId,
       amount: data.amount,
       currency: data.currency,
-      name: 'ShopVerse',
+      name: store.name || 'ShopVerse',
       description: `Order #${data.orderId}`,
       order_id: data.razorpayOrderId,
       prefill: { name: form.name, email: form.email },
@@ -95,6 +100,10 @@ export default function Checkout() {
       setError('Please fill in your name and email.');
       return;
     }
+    if (form.gstin.trim() && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(form.gstin.trim().toUpperCase())) {
+      setError('The GSTIN you entered does not look valid. Check the 15-character format.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -103,6 +112,9 @@ export default function Checkout() {
         customerName: form.name.trim(),
         customerEmail: form.email.trim(),
         customerAddress: form.address.trim(),
+        companyName: form.companyName.trim(),
+        gstin: form.gstin.trim(),
+        billingState: form.billingState,
       });
       if (data.paymentMethod === 'razorpay') {
         startRazorpay(data);
@@ -148,6 +160,39 @@ export default function Checkout() {
               rows={3}
             />
           </label>
+          <div className="checkout-billing">
+            <h3>Billing details <em>(optional, for GST invoices)</em></h3>
+            <label className="field">
+              <span>Company / business name</span>
+              <input
+                value={form.companyName}
+                onChange={set('companyName')}
+                placeholder="Acme Pvt Ltd"
+              />
+            </label>
+            <label className="field">
+              <span>GSTIN</span>
+              <input
+                value={form.gstin}
+                onChange={(e) => setForm((f) => ({ ...f, gstin: e.target.value.toUpperCase() }))}
+                placeholder="29ABCDE1234F1Z5"
+                maxLength={15}
+              />
+              <p className="hint">Optional. Provide your GSTIN to get a GST invoice.</p>
+            </label>
+            <label className="field">
+              <span>Billing state</span>
+              <select value={form.billingState} onChange={set('billingState')}>
+                <option value="">Select state</option>
+                {INDIA_STATES.map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              <p className="hint">GST (CGST+SGST / IGST) is shown on your invoice.</p>
+            </label>
+          </div>
           {error && <div className="notice notice-error">{error}</div>}
           <button className="btn btn-primary btn-lg btn-full" disabled={submitting}>
             {submitting ? 'Redirecting to payment...' : `Pay ${formatPrice(subtotal)}`}

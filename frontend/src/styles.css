@@ -1128,6 +1128,275 @@ textarea:focus {
 .footer-links {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: var(--primary);
+}
+
+.footer-sub {
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* ---------- Cookie consent ---------- */
+.cookie-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #111827;
+  color: #f9fafb;
+  padding: 14px 20px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.cookie-banner-inner {
+  max-width: 1160px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.cookie-banner p {
+  margin: 0;
+  max-width: 780px;
+}
+
+.cookie-banner a {
+  color: #a5b4fc;
+}
+
+.cookie-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ---------- Legal pages ---------- */
+.legal-page {
+  max-width: 780px;
+}
+
+.legal-back {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.legal-back:hover {
+  color: var(--primary);
+}
+
+.legal-updated {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: -8px;
+}
+
+.legal-section {
+  margin: 28px 0;
+}
+
+.legal-section h2 {
+  font-size: 20px;
+  margin: 0 0 10px;
+}
+
+.legal-subsection {
+  margin: 14px 0;
+}
+
+.legal-subsection h3 {
+  font-size: 16px;
+  margin: 0 0 6px;
+}
+
+.legal-section p,
+.legal-subsection p {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.legal-section li {
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 4px 0;
+}
+
+.legal-note {
+  color: var(--warning);
+}
+
+/* ---------- Invoice ---------- */
+.invoice-page {
+  max-width: 860px;
+}
+
+.invoice-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.invoice {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  background: #fff;
+  color: #111827;
+}
+
+.invoice-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 2px solid #111827;
+  padding-bottom: 16px;
+}
+
+.invoice-title {
+  font-size: 24px;
+  margin: 0 0 6px;
+  letter-spacing: 1px;
+}
+
+.invoice-no,
+.invoice-date {
+  font-size: 14px;
+  color: #4b5563;
+  margin: 2px 0;
+}
+
+.invoice-seller {
+  text-align: right;
+  font-size: 13px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.invoice-buyer {
+  margin: 16px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+}
+
+.invoice-buyer strong {
+  margin-bottom: 2px;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.invoice-table th,
+.invoice-table td {
+  border: 1px solid #e5e7eb;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.invoice-table th {
+  background: #f3f4f6;
+  font-size: 12px;
+}
+
+.invoice-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.invoice-cat {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.invoice-total td,
+.invoice-total th {
+  background: #f9fafb;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.invoice-foot {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.invoice-thanks {
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.checkout-billing {
+  margin-top: 24px;
+  border-top: 1px dashed var(--border);
+  padding-top: 20px;
+}
+
+.checkout-billing h3 em {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.order-invoice-link {
+  margin-top: 10px;
+}
+
+.order-invoice-link a {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media print {
+  .navbar,
+  .footer,
+  .cookie-banner,
+  .invoice-actions,
+  .legal-back {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .container.section.invoice-page,
+  .invoice {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+  }
+
+  .invoice-table th,
+  .invoice-table td {
+    border-color: #000;
+  }
 }
 
 /* ---------- Responsive ---------- */

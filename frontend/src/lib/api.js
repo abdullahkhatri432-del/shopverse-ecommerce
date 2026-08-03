@@ -66,11 +66,24 @@ let siteConfig = {
   paymentProvider: 'mock',
   currency: 'INR',
   razorpayKeyId: '',
+  store: {
+    name: 'ShopVerse',
+    legalName: '',
+    proprietor: '',
+    address: '',
+    email: '',
+    phone: '',
+    website: '',
+    gstin: '',
+    stateCode: '',
+    stateName: '',
+    grievanceOfficer: { name: '', email: '', phone: '' },
+  },
 };
 
 export async function loadConfig() {
   try {
-    const data = await api.get('/checkout/config');
+    const data = await api.get('/config');
     if (data) siteConfig = { ...siteConfig, ...data };
   } catch {
     // keep defaults if the backend is unavailable
@@ -80,6 +93,15 @@ export async function loadConfig() {
 
 export function getConfig() {
   return siteConfig;
+}
+
+export function getStore() {
+  return siteConfig.store || {};
+}
+
+export function getGrievanceOfficer() {
+  const s = getStore();
+  return s.grievanceOfficer || {};
 }
 
 export function formatPrice(cents) {

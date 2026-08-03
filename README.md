@@ -7,10 +7,13 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 - **Product catalog** — browse, search, filter by category and max price, and sort products
 - **Product details** — images, descriptions, stock status, quantity picker
 - **Shopping cart** — add/remove items, change quantities, persisted in `localStorage`
-- **Checkout** — shipping details, order summary, and payment
+- **Checkout** — shipping details, optional GSTIN/billing-state for GST invoices, order summary, and payment
 - **Payments** — Razorpay Checkout (test mode) with a built-in **mock checkout** fallback that works with zero configuration
-- **User accounts** — register, log in (JWT), and view order history
+- **GST invoices** — printable tax invoices with CGST/SGST/IGST breakdown, invoice numbers, and buyer/seller details
+- **Legal & compliance** — Terms, Privacy (DPDP-ready), Refund, Shipping, Cancellation, Grievance Officer and Seller Info pages, plus a cookie/local-storage consent banner
+- **User accounts** — register, log in (JWT), and view order history + GST invoices
 - **Admin panel** — add/edit/delete products (with image upload), manage categories from a fixed dropdown so sellers can't mistype them, and manage order statuses
+- **Security hardening** — Helmet, rate limiting, JSON body-size caps, hidden error traces
 - **SQLite database** — no external database server required (Node's built-in `node:sqlite`)
 
 ## Tech stack
@@ -29,23 +32,25 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 ecommerce/
 ├── backend/
 │   ├── src/
-│   │   ├── server.js          # Express app entry
-│   │   ├── db.js              # SQLite connection + schema
+│   │   ├── server.js          # Express app entry (Helmet, rate limits, security)
+│   │   ├── db.js              # SQLite connection + schema + migrations
 │   │   ├── auth.js            # JWT helpers & middleware
+│   │   ├── gst.js             # GST rates, GSTIN validation, CGST/SGST/IGST split
 │   │   ├── seed.js            # Seeds admin user + sample products
 │   │   └── routes/
 │   │       ├── auth.js        # register / login / me
 │   │       ├── products.js    # catalog, search, filters
-│   │       ├── orders.js      # create / confirm / my orders
+│   │       ├── orders.js      # create / confirm / my orders / invoice
 │   │       ├── checkout.js    # Razorpay or mock checkout
-│   │       └── admin.js       # product & order management
+│   │       ├── config.js      # payment + store/legal info
+│   │       └── admin.js       # product, category & order management
 │   └── .env.example
 └── frontend/
     └── src/
-        ├── pages/             # Home, Shop, Product, Cart, Checkout, Auth, Admin…
-        ├── components/        # Navbar, ProductCard, Footer
+        ├── pages/             # Home, Shop, Product, Cart, Checkout, Invoice, Legal, Auth, Admin…
+        ├── components/        # Navbar, ProductCard, Footer, CookieConsent, InvoiceView
         ├── context/           # Auth, Cart, Toast
-        └── lib/api.js         # API client
+        └── lib/api.js         # API client + store config
 ```
 
 ## Getting started
@@ -88,6 +93,19 @@ Seeded by `npm run seed`:
 
 Any user you register gets the `customer` role by default.
 
+## GST invoices
+
+After an order is paid, a GST tax invoice is generated automatically (`/api/orders/:id/invoice`)
+and is viewable/printable at `/invoice/:orderId` (linked from the order-success page and from
+each paid order in the account page). The invoice shows:
+
+- Seller details and GSTIN from `.env` (`STORE_*`), and buyer details/GSTIN captured at checkout
+- Per-line GST at the category-based rate (books/essentials 5%, apparel 12%, most goods 18%)
+- **CGST + SGST** for intra-state sales, or **IGST** for inter-state sales
+- A unique sequential invoice number (`INV-YYYY-######`)
+
+GST is informational until you set `STORE_GSTIN`; fill it in once your GST registration is done.
+
 ## Payments
 
 By default the store uses a **mock checkout**: placing an order immediately creates it and confirms it, with a note that no real payment was taken.
@@ -117,10 +135,12 @@ The order is confirmed only after the payment signature is verified server-side 
 | GET    | `/api/products/:id`             | Single product                  | –        |
 | GET    | `/api/products/categories`      | Distinct categories             | –        |
 | GET    | `/api/products/featured`        | Featured products               | –        |
+| GET    | `/api/config`                   | Payment + store/legal info      | –        |
 | POST   | `/api/checkout`                 | Create order + start payment    | –        |
 | GET    | `/api/checkout/config`          | Currency & payment provider info| –        |
 | POST   | `/api/checkout/verify`          | Verify Razorpay payment signature| –        |
 | POST   | `/api/orders/:id/confirm`       | Mark order paid                 | –        |
+| GET    | `/api/orders/:id/invoice`       | GST invoice for a paid order    | –        |
 | GET    | `/api/orders/my`                | Current user's orders           | User     |
 | POST   | `/api/admin/products`           | Create product                  | Admin    |
 | PUT    | `/api/admin/products/:id`       | Update product                  | Admin    |
@@ -145,8 +165,23 @@ The order is confirmed only after the payment signature is verified server-side 
 | `ADMIN_PASSWORD`    | `admin123`                | Admin password used by `npm run seed`|
 | `RAZORPAY_KEY_ID`   | *(empty)*                 | Razorpay test key; enables Razorpay  |
 | `RAZORPAY_KEY_SECRET`| *(empty)*                | Razorpay secret (with key id above)  |
+| `CORS_ORIGIN`       | `http://localhost:5173`   | Allowed frontend origin(s)           |
+| `STORE_NAME`        | `ShopVerse`               | Store display name                   |
+| `STORE_LEGAL_NAME`  | *(placeholder)*           | Legal business name (shown on invoices)|
+| `STORE_PROPRIETOR`  | *(placeholder)*           | Proprietor name                      |
+| `STORE_ADDRESS`     | *(placeholder)*           | Registered address                   |
+| `STORE_EMAIL`/`STORE_PHONE`/`STORE_WEBSITE` | *(placeholder)* | Contact details            |
+| `STORE_GSTIN`       | *(empty)*                 | Your GSTIN (enables seller GSTIN on invoices) |
+| `STORE_STATE`/`STORE_STATE_NAME` | `DL` / `Delhi`   | Seller state for CGST/SGST vs IGST   |
+| `GRIEVANCE_OFFICER_*` | *(placeholder)*        | Grievance officer name/email/phone   |
 
 > Prices are stored in the smallest unit of `CURRENCY` (paise/cents). Seed prices such as `19900` display as ₹199.00 by default.
+
+## Legal & compliance
+
+See **[COMPLIANCE.md](COMPLIANCE.md)** for the India-focused checklist: which legal pages and
+invoices are already built in, and the registrations (GST, shop & establishment, live Razorpay,
+grievance officer) you must complete before going live.
 
 ## Production build
 

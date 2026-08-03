@@ -50,6 +50,11 @@ export default function Account() {
                   <span className="order-total">{formatPrice(o.totalCents)}</span>
                 </div>
               </div>
+              {o.status === 'paid' && o.invoiceNumber && (
+                <div className="order-invoice-link">
+                  <Link to={`/invoice/${o.id}`}>View GST invoice</Link>
+                </div>
+              )}
               <div className="order-items">
                 {o.items.map((i) => (
                   <div className="summary-line" key={i.id}>

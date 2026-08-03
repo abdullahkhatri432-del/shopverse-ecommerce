@@ -39,6 +39,10 @@ db.exec(`
     customer_name TEXT NOT NULL DEFAULT '',
     customer_email TEXT NOT NULL DEFAULT '',
     customer_address TEXT NOT NULL DEFAULT '',
+    company_name TEXT NOT NULL DEFAULT '',
+    gstin TEXT NOT NULL DEFAULT '',
+    billing_state TEXT NOT NULL DEFAULT '',
+    invoice_number TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
@@ -50,6 +54,7 @@ db.exec(`
     product_name TEXT NOT NULL,
     price_cents INTEGER NOT NULL,
     quantity INTEGER NOT NULL,
+    category TEXT NOT NULL DEFAULT 'general',
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id)
   );
@@ -66,6 +71,29 @@ db.exec(`
   SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != '';
   INSERT OR IGNORE INTO categories (name) VALUES ('general');
 `);
+
+// Migrations for databases created before columns were added.
+const orderColumns = db
+  .prepare('PRAGMA table_info(orders)')
+  .all()
+  .map((c) => c.name);
+const orderMigrations = {
+  company_name: "ALTER TABLE orders ADD COLUMN company_name TEXT NOT NULL DEFAULT ''",
+  gstin: "ALTER TABLE orders ADD COLUMN gstin TEXT NOT NULL DEFAULT ''",
+  billing_state: "ALTER TABLE orders ADD COLUMN billing_state TEXT NOT NULL DEFAULT ''",
+  invoice_number: 'ALTER TABLE orders ADD COLUMN invoice_number TEXT',
+};
+for (const [col, sql] of Object.entries(orderMigrations)) {
+  if (!orderColumns.includes(col)) db.exec(sql);
+}
+
+const itemColumns = db
+  .prepare('PRAGMA table_info(order_items)')
+  .all()
+  .map((c) => c.name);
+if (!itemColumns.includes('category')) {
+  db.exec("ALTER TABLE order_items ADD COLUMN category TEXT NOT NULL DEFAULT 'general'");
+}
 
 function toProduct(row) {
   return {

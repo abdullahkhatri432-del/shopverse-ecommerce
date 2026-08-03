@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('node:crypto');
 const { db } = require('../db');
+const { validateGstin, isValidState, generateInvoiceNumber } = require('../gst');
 
 const router = express.Router();
 
@@ -28,13 +29,30 @@ router.get('/config', (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { items, customerName, customerEmail, customerAddress } = req.body || {};
+  const {
+    items,
+    customerName,
+    customerEmail,
+    customerAddress,
+    companyName,
+    gstin,
+    billingState,
+  } = req.body || {};
 
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Cart is empty' });
   }
   if (!customerName || !customerEmail) {
     return res.status(400).json({ error: 'Customer name and email are required' });
+  }
+
+  const gstinClean = String(gstin || '').trim().toUpperCase();
+  if (gstinClean && !validateGstin(gstinClean)) {
+    return res.status(400).json({ error: 'Invalid GSTIN format' });
+  }
+  const stateClean = String(billingState || '').trim().toUpperCase();
+  if (stateClean && !isValidState(stateClean)) {
+    return res.status(400).json({ error: 'Invalid billing state code' });
   }
 
   const getProduct = db.prepare('SELECT * FROM products WHERE id = ?');
@@ -59,6 +77,7 @@ router.post('/', async (req, res) => {
       name: product.name,
       priceCents: product.price_cents,
       quantity,
+      category: product.category || 'general',
     });
   }
 
@@ -69,23 +88,26 @@ router.post('/', async (req, res) => {
   }
 
   const insertOrder = db.prepare(`
-    INSERT INTO orders (user_id, total_cents, status, payment_method, customer_name, customer_email, customer_address)
-    VALUES (NULL, ?, 'pending', ?, ?, ?, ?)
+    INSERT INTO orders (user_id, total_cents, status, payment_method, customer_name, customer_email, customer_address, company_name, gstin, billing_state)
+    VALUES (NULL, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)
   `);
   const orderId = insertOrder.run(
     totalCents,
     razorpayEnabled() ? 'razorpay' : 'mock',
     String(customerName).trim(),
     String(customerEmail).trim(),
-    String(customerAddress || '').trim()
+    String(customerAddress || '').trim(),
+    String(companyName || '').trim(),
+    gstinClean,
+    stateClean
   ).lastInsertRowid;
 
   const insertItem = db.prepare(`
-    INSERT INTO order_items (order_id, product_id, product_name, price_cents, quantity)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO order_items (order_id, product_id, product_name, price_cents, quantity, category)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
   for (const i of orderItems) {
-    insertItem.run(orderId, i.productId, i.name, i.priceCents, i.quantity);
+    insertItem.run(orderId, i.productId, i.name, i.priceCents, i.quantity, i.category);
   }
 
   if (!razorpayEnabled()) {
@@ -145,8 +167,11 @@ router.post('/verify', async (req, res) => {
     return res.status(400).json({ error: 'Invalid payment signature' });
   }
 
-  db.prepare("UPDATE orders SET status = 'paid', payment_method = 'razorpay' WHERE id = ?").run(orderId);
-  const updated = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+  const invoiceNumber = order.invoice_number || generateInvoiceNumber(order.id);
+  db.prepare(
+    "UPDATE orders SET status = 'paid', payment_method = 'razorpay', invoice_number = COALESCE(invoice_number, ?) WHERE id = ?"
+  ).run(invoiceNumber, order.id);
+  const updated = db.prepare('SELECT * FROM orders WHERE id = ?').get(order.id);
   res.json({ ok: true, orderId: updated.id, status: updated.status });
 });
 
