@@ -57,8 +57,13 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
   const normalizedEmail = String(email).trim().toLowerCase();
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(normalizedEmail);
+  const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(normalizedEmail);
   if (existing) {
+    if (existing.password_hash === 'GOOGLE_OAUTH_PLACEHOLDER') {
+      return res.status(409).json({
+        error: 'An account already exists for this email via Google. Please sign in with Google instead.',
+      });
+    }
     return res.status(409).json({ error: 'An account with this email already exists' });
   }
   const hash = bcrypt.hashSync(String(password), 10);
@@ -77,7 +82,15 @@ router.post('/login', (req, res) => {
   const user = db
     .prepare('SELECT * FROM users WHERE email = ?')
     .get(String(email).trim().toLowerCase());
-  if (!user || !bcrypt.compareSync(String(password), user.password_hash)) {
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+  if (user.password_hash === 'GOOGLE_OAUTH_PLACEHOLDER') {
+    return res.status(401).json({
+      error: 'This account was created with Google sign-in. Please use "Sign in with Google".',
+    });
+  }
+  if (!bcrypt.compareSync(String(password), user.password_hash)) {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
   res.json({ token: signToken(user), user: toUser(user) });

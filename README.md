@@ -15,7 +15,7 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 - **Promotional banners** — an auto-playing hero **slideshow** of offers (arrows + dots, pauses on hover, respects reduced-motion), sliding **product carousels** (Featured, Top picks, Recently viewed), and a big **Deals-of-the-day** offer banner with a live countdown
 - **User-friendly polish** — loading skeletons, friendly empty states, page transitions, breadcrumbs, hover micro-interactions, a **mobile bottom nav**, focus-visible + reduced-motion accessibility, and a trust strip (free delivery, COD, returns)
 - **Legal & compliance** — Terms, Privacy (DPDP-ready), Refund, Shipping, Cancellation, Grievance Officer, Seller Info and Contact pages, grievance officer details in the footer, plus a cookie/local-storage consent banner
-- **User accounts** — secure **Google sign-in** (verified, duplicate-free) and view order history + GST invoices
+- **User accounts** — sign in with **Google** or **email + password** (verified, duplicate-free) and view order history + GST invoices
 - **Admin panel** — add/edit/delete products (with image upload + country of origin), manage categories from a fixed dropdown so sellers can't mistype them, and manage order statuses (incl. returns & refunds)
 - **Security hardening** — Helmet, per-minute auth/checkout rate limits, JSON body-size caps, hidden error traces, malformed-body handling
 - **SEO & UX** — dynamic titles/descriptions/Open Graph tags, custom 404 page, React error boundary, lazy-loaded images, fully responsive
@@ -28,7 +28,7 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 | Frontend | React 18, Vite, React Router       |
 | Backend  | Node.js, Express                   |
 | Database | SQLite (via built-in `node:sqlite`)|
-| Auth     | Google OAuth (verified accounts) + JWT |
+| Auth     | Google OAuth (verified accounts) + email/password + JWT |
 
 ## Project structure
 
@@ -44,7 +44,7 @@ ecommerce/
 │   │   ├── mailer.js          # Order email notifications (SMTP or console mock)
 │   │   ├── seed.js            # Seeds admin user + sample products
 │   │   └── routes/
-│   │       ├── auth.js        # Google OAuth / admin login / me
+│   │       ├── auth.js        # Google OAuth / register / login / me
 │   │       ├── products.js    # catalog, search, filters
 │   │       ├── orders.js      # create / confirm / cancel / return / my orders / PDF invoice
 │   │       ├── checkout.js    # Razorpay, COD or mock checkout
@@ -99,22 +99,27 @@ Seeded by `npm run seed`:
 | -------- | -------------------- | --------- |
 | Admin    | `admin@example.com`  | `admin123`|
 
-Customer accounts use **Google sign-in** (see below); registration is Google-only to avoid duplicate
-accounts.
+Customer accounts use **Google sign-in** (see below) **or a manual email + password** (register with
+either; the backend **upserts by email**, so one email can never produce two accounts — a Google
+account created first signs in via Google, a manual account created first signs in via email).
 
-## Authentication (Google)
+## Authentication
 
-Customers sign in with Google via the Sign-In-for-Web widget (the button shows once you configure
-`GOOGLE_CLIENT_ID`):
+Customers can sign in two ways — a **Google** button via the Sign-In-for-Web widget (shows once you
+configure `GOOGLE_CLIENT_ID`) or a plain **email + password** form (registration requires a name,
+valid email and a 6+ character password):
 
-1. Create a project at https://console.cloud.google.com → **APIs & Services → OAuth consent screen**,
-   then **Credentials → Create credentials → OAuth client ID** → type *Web application*.
-2. Set `GOOGLE_CLIENT_ID` (and `GOOGLE_CLIENT_SECRET`) in `backend/.env`.
-3. Restart the backend. The login/register pages now show the **Google button**.
+1. *(optional, Google)* Create a project at https://console.cloud.google.com → **APIs & Services →
+   OAuth consent screen**, then **Credentials → Create credentials → OAuth client ID** → type *Web
+   application*.
+2. *(optional, Google)* Set `GOOGLE_CLIENT_ID` (and `GOOGLE_CLIENT_SECRET`) in `backend/.env`.
+3. Restart the backend. The login/register pages show the **Google button** alongside the email form.
 
-The backend verifies the ID token (`google-auth-library`) and only accepts accounts with a
+The backend verifies Google ID tokens (`google-auth-library`) and only accepts accounts with a
 **verified** email, then **upserts by that email** — signing in can never create a duplicate customer.
-The admin account is unaffected and signs in with email + password (toggle under the Google button).
+Emails are case-insensitive and unique; a Google-created account can't be signed into with a manual
+password (and vice-versa), and you're told which method to use. The admin account (`admin@example.com` /
+`admin123`) signs in with the email form.
 
 ## GST invoices
 
