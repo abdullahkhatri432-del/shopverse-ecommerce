@@ -7,7 +7,7 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 - **Product catalog** — browse, search (debounced), filter by category, price range and in-stock, and sort products
 - **Product details** — images, descriptions, stock status, **country of origin**, GST-inclusive pricing, quantity picker, breadcrumbs, and **verified-purchase reviews & star ratings**
 - **Shopping cart** — add/remove items, change quantities, persisted in `localStorage` **and synced to the server** (merged when you sign in, so abandoned carts survive across devices)
-- **Checkout** — shipping details, optional GSTIN/billing-state for GST invoices, pincode delivery check, order summary, **Cash on Delivery**, and **price-sync protection** (you're alerted if a price changed before you pay)
+- **Checkout** — friendly 3-step flow (details → payment → review) with per-field validation, rich payment-method cards (online vs **Cash on Delivery**), a security trust bar, order summary with product thumbnails, optional GSTIN/billing-state for GST invoices, and **price-sync protection** (you're alerted if a price changed before you pay)
 - **Payments** — Razorpay Checkout (test/live) with server-side signature verification, **COD**, and a mock checkout that is **disabled in production**
 - **GST invoices** — printable + **PDF download** tax invoices with CGST/SGST/IGST breakdown, invoice numbers, and buyer/seller details
 - **Order tracking** — status stepper (placed → packed → shipped → out for delivery → delivered), estimated delivery dates, order cancellation, and **return/refund requests** within 7 days of delivery
