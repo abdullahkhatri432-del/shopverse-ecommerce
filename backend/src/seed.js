@@ -167,6 +167,14 @@ function seed() {
     insert.run(p.name, p.description, p.price_cents, p.image_url, p.category, p.stock, p.featured);
   }
   console.log('Seeded', products.length, 'products.');
+
+  const catCount = db.prepare('SELECT COUNT(*) AS n FROM categories').get().n;
+  if (catCount === 0) {
+    const rows = db.prepare('SELECT DISTINCT category FROM products').all();
+    const insCat = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
+    for (const r of rows) insCat.run(r.category);
+    console.log('Seeded', rows.length, 'categories.');
+  }
 }
 
 seed();

@@ -53,6 +53,18 @@ db.exec(`
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id)
   );
+
+  CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+  );
+`);
+
+// Backfill the categories table from any existing products (and a default).
+db.exec(`
+  INSERT OR IGNORE INTO categories (name)
+  SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != '';
+  INSERT OR IGNORE INTO categories (name) VALUES ('general');
 `);
 
 function toProduct(row) {

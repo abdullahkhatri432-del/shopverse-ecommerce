@@ -45,6 +45,14 @@ router.get('/products', (req, res) => {
   res.json({ products: rows.map(toProduct) });
 });
 
+function validateCategory(category) {
+  const clean = String(category).trim();
+  if (!clean) return { error: 'Category is required' };
+  const exists = db.prepare('SELECT id FROM categories WHERE name = ?').get(clean);
+  if (!exists) return { error: `Category "${clean}" does not exist. Add it under Categories first.` };
+  return { clean };
+}
+
 router.post('/products', (req, res) => {
   const { name, description, price, imageUrl, category, stock, featured } = req.body || {};
   if (!name || price === undefined || price === null) {
@@ -54,6 +62,8 @@ router.post('/products', (req, res) => {
   if (!Number.isFinite(priceCents) || priceCents < 0) {
     return res.status(400).json({ error: 'Invalid price' });
   }
+  const cat = validateCategory(category || 'general');
+  if (cat.error) return res.status(400).json({ error: cat.error });
   const result = db
     .prepare(
       `INSERT INTO products (name, description, price_cents, image_url, category, stock, featured)
@@ -64,7 +74,7 @@ router.post('/products', (req, res) => {
       String(description || ''),
       priceCents,
       String(imageUrl || ''),
-      String(category || 'general').trim(),
+      cat.clean,
       Math.max(0, Math.floor(Number(stock) || 0)),
       featured ? 1 : 0
     );
@@ -82,6 +92,11 @@ router.put('/products/:id', (req, res) => {
   if (!Number.isFinite(priceCents) || priceCents < 0) {
     return res.status(400).json({ error: 'Invalid price' });
   }
+  const cat =
+    category !== undefined && category !== ''
+      ? validateCategory(category)
+      : { clean: existing.category };
+  if (cat.error) return res.status(400).json({ error: cat.error });
 
   db.prepare(
     `UPDATE products SET
@@ -92,7 +107,7 @@ router.put('/products/:id', (req, res) => {
     description !== undefined ? String(description) : existing.description,
     priceCents,
     imageUrl !== undefined ? String(imageUrl) : existing.image_url,
-    category !== undefined ? String(category).trim() : existing.category,
+    cat.clean,
     stock !== undefined ? Math.max(0, Math.floor(Number(stock) || 0)) : existing.stock,
     featured !== undefined ? (featured ? 1 : 0) : existing.featured,
     existing.id
@@ -100,6 +115,48 @@ router.put('/products/:id', (req, res) => {
 
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(existing.id);
   res.json({ product: toProduct(product) });
+});
+
+router.get('/categories', (req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT c.id, c.name, COUNT(p.id) AS product_count
+       FROM categories c
+       LEFT JOIN products p ON p.category = c.name
+       GROUP BY c.id
+       ORDER BY c.name`
+    )
+    .all();
+  res.json({
+    categories: rows.map((r) => ({ id: r.id, name: r.name, productCount: r.product_count })),
+  });
+});
+
+router.post('/categories', (req, res) => {
+  const clean = String((req.body && req.body.name) || '').trim();
+  if (!clean) return res.status(400).json({ error: 'Category name is required' });
+  try {
+    const result = db.prepare('INSERT INTO categories (name) VALUES (?)').run(clean);
+    res.status(201).json({ category: { id: result.lastInsertRowid, name: clean, productCount: 0 } });
+  } catch (err) {
+    if (String(err.message).includes('UNIQUE')) {
+      return res.status(409).json({ error: 'Category already exists' });
+    }
+    throw err;
+  }
+});
+
+router.delete('/categories/:id', (req, res) => {
+  const cat = db.prepare('SELECT * FROM categories WHERE id = ?').get(req.params.id);
+  if (!cat) return res.status(404).json({ error: 'Category not found' });
+  const inUse = db.prepare('SELECT COUNT(*) AS n FROM products WHERE category = ?').get(cat.name).n;
+  if (inUse > 0) {
+    return res
+      .status(400)
+      .json({ error: `Cannot delete "${cat.name}" — ${inUse} product(s) still use it` });
+  }
+  db.prepare('DELETE FROM categories WHERE id = ?').run(cat.id);
+  res.json({ ok: true });
 });
 
 router.delete('/products/:id', (req, res) => {

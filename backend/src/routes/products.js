@@ -60,8 +60,8 @@ router.get('/', (req, res) => {
 });
 
 router.get('/categories', (req, res) => {
-  const rows = db.prepare('SELECT DISTINCT category FROM products ORDER BY category').all();
-  res.json({ categories: rows.map((r) => r.category) });
+  const rows = db.prepare('SELECT name FROM categories ORDER BY name').all();
+  res.json({ categories: rows.map((r) => r.name) });
 });
 
 router.get('/featured', (req, res) => {

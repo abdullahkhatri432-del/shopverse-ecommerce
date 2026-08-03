@@ -10,7 +10,7 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 - **Checkout** — shipping details, order summary, and payment
 - **Payments** — Razorpay Checkout (test mode) with a built-in **mock checkout** fallback that works with zero configuration
 - **User accounts** — register, log in (JWT), and view order history
-- **Admin panel** — add/edit/delete products (with image upload), manage order statuses
+- **Admin panel** — add/edit/delete products (with image upload), manage categories from a fixed dropdown so sellers can't mistype them, and manage order statuses
 - **SQLite database** — no external database server required (Node's built-in `node:sqlite`)
 
 ## Tech stack
@@ -126,6 +126,9 @@ The order is confirmed only after the payment signature is verified server-side 
 | PUT    | `/api/admin/products/:id`       | Update product                  | Admin    |
 | DELETE | `/api/admin/products/:id`       | Delete product                  | Admin    |
 | POST   | `/api/admin/upload`             | Upload a product image (multipart)| Admin  |
+| GET    | `/api/admin/categories`         | List categories (+ product counts)| Admin    |
+| POST   | `/api/admin/categories`         | Create a category                 | Admin    |
+| DELETE | `/api/admin/categories/:id`     | Delete a category (only if unused)| Admin    |
 | GET    | `/api/admin/orders`             | All orders                      | Admin    |
 | PATCH  | `/api/admin/orders/:id/status`  | Update order status             | Admin    |
 

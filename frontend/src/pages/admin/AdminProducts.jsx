@@ -14,6 +14,7 @@ const EMPTY = {
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -30,7 +31,13 @@ export default function AdminProducts() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
+  useEffect(() => {
+    load();
+    api
+      .get('/admin/categories', { auth: true })
+      .then((d) => setCategories(d.categories))
+      .catch((err) => push(err.message, 'error'));
+  }, []);
 
   const openCreate = () => {
     setEditing(null);
@@ -209,7 +216,13 @@ export default function AdminProducts() {
             <div className="field-row">
               <label className="field">
                 <span>Category</span>
-                <input value={form.category} onChange={set('category')} />
+                <select value={form.category} onChange={set('category')} required>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="field">
                 <span>Stock</span>

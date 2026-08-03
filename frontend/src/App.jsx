@@ -13,6 +13,7 @@ import Register from './pages/Register';
 import Account from './pages/Account';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminProducts from './pages/admin/AdminProducts';
+import AdminCategories from './pages/admin/AdminCategories';
 import AdminOrders from './pages/admin/AdminOrders';
 
 function Protected({ children }) {
@@ -62,6 +63,7 @@ export default function App() {
           >
             <Route index element={<Navigate to="/admin/products" replace />} />
             <Route path="products" element={<AdminProducts />} />
+            <Route path="categories" element={<AdminCategories />} />
             <Route path="orders" element={<AdminOrders />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
