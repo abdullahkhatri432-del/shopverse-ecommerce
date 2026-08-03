@@ -54,7 +54,7 @@ function validateCategory(category) {
 }
 
 router.post('/products', (req, res) => {
-  const { name, description, price, imageUrl, category, stock, featured, countryOfOrigin } = req.body || {};
+  const { name, description, price, mrp, imageUrl, category, stock, featured, countryOfOrigin } = req.body || {};
   if (!name || price === undefined || price === null) {
     return res.status(400).json({ error: 'Name and price are required' });
   }
@@ -62,17 +62,25 @@ router.post('/products', (req, res) => {
   if (!Number.isFinite(priceCents) || priceCents < 0) {
     return res.status(400).json({ error: 'Invalid price' });
   }
+  const mrpCents =
+    mrp !== undefined && mrp !== null && mrp !== ''
+      ? Math.round(Number(mrp) * 100)
+      : null;
+  if (mrpCents !== null && (!Number.isFinite(mrpCents) || mrpCents < priceCents)) {
+    return res.status(400).json({ error: 'MRP must be a number above the selling price' });
+  }
   const cat = validateCategory(category || 'general');
   if (cat.error) return res.status(400).json({ error: cat.error });
   const result = db
     .prepare(
-      `INSERT INTO products (name, description, price_cents, image_url, category, stock, featured, country_of_origin)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO products (name, description, price_cents, mrp_cents, image_url, category, stock, featured, country_of_origin)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       String(name).trim(),
       String(description || ''),
       priceCents,
+      mrpCents,
       String(imageUrl || ''),
       cat.clean,
       Math.max(0, Math.floor(Number(stock) || 0)),
@@ -87,11 +95,18 @@ router.put('/products/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Product not found' });
 
-  const { name, description, price, imageUrl, category, stock, featured, countryOfOrigin } = req.body || {};
+  const { name, description, price, mrp, imageUrl, category, stock, featured, countryOfOrigin } = req.body || {};
   const priceCents =
     price !== undefined && price !== null ? Math.round(Number(price) * 100) : existing.price_cents;
   if (!Number.isFinite(priceCents) || priceCents < 0) {
     return res.status(400).json({ error: 'Invalid price' });
+  }
+  const mrpCents =
+    mrp !== undefined && mrp !== null && mrp !== ''
+      ? Math.round(Number(mrp) * 100)
+      : existing.mrp_cents || null;
+  if (mrpCents !== null && mrpCents < priceCents) {
+    return res.status(400).json({ error: 'MRP must be above the selling price' });
   }
   const cat =
     category !== undefined && category !== ''
@@ -101,12 +116,13 @@ router.put('/products/:id', (req, res) => {
 
   db.prepare(
     `UPDATE products SET
-       name = ?, description = ?, price_cents = ?, image_url = ?, category = ?, stock = ?, featured = ?, country_of_origin = ?
+       name = ?, description = ?, price_cents = ?, mrp_cents = ?, image_url = ?, category = ?, stock = ?, featured = ?, country_of_origin = ?
      WHERE id = ?`
   ).run(
     name !== undefined ? String(name).trim() : existing.name,
     description !== undefined ? String(description) : existing.description,
     priceCents,
+    mrpCents,
     imageUrl !== undefined ? String(imageUrl) : existing.image_url,
     cat.clean,
     stock !== undefined ? Math.max(0, Math.floor(Number(stock) || 0)) : existing.stock,

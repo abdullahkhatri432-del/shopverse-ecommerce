@@ -15,6 +15,7 @@ const configRoutes = require('./routes/config');
 const adminRoutes = require('./routes/admin');
 const cartRoutes = require('./routes/cart');
 const shippingRoutes = require('./routes/shipping');
+const newsletterRoutes = require('./routes/newsletter');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -108,6 +109,7 @@ app.post('/api/checkout', checkoutInitLimiter);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/shipping', shippingRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.use('/uploads', express.static(uploadsDir, { maxAge: '7d' }));

@@ -31,6 +31,7 @@ export function CartProvider({ children }) {
   const { user } = useAuth();
   const [items, setItems] = useState(loadCart);
   const [hydrated, setHydrated] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const prevLoggedIn = useRef(undefined);
 
   useEffect(() => {
@@ -98,6 +99,9 @@ export function CartProvider({ children }) {
 
   const clear = () => setItems([]);
 
+  const openCart = () => setDrawerOpen(true);
+  const closeCart = () => setDrawerOpen(false);
+
   const count = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
   const subtotal = useMemo(
     () => items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0),
@@ -105,7 +109,9 @@ export function CartProvider({ children }) {
   );
 
   return (
-    <CartContext.Provider value={{ items, count, subtotal, add, remove, setQuantity, clear }}>
+    <CartContext.Provider
+      value={{ items, count, subtotal, add, remove, setQuantity, clear, drawerOpen, openCart, closeCart }}
+    >
       {children}
     </CartContext.Provider>
   );

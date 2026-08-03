@@ -9,9 +9,16 @@ export default function ProductCard({ product }) {
   const { has, toggle } = useWishlist();
   const out = product.stock <= 0;
   const wished = has(product.id);
+  const hasMrp = product.mrpCents > product.priceCents;
+  const discountPercent = product.discountPercent || (hasMrp ? Math.round(((product.mrpCents - product.priceCents) / product.mrpCents) * 100) : 0);
 
   return (
     <div className={`product-card ${wished ? 'wished' : ''}`}>
+      {discountPercent > 0 && (
+        <span className="discount-badge card-badge">
+          {discountPercent}% OFF
+        </span>
+      )}
       <button
         type="button"
         className={`wish-btn ${wished ? 'active' : ''}`}
@@ -57,7 +64,10 @@ export default function ProductCard({ product }) {
           </span>
         )}
         <div className="product-foot">
-          <span className="product-price">{formatPrice(product.priceCents)}</span>
+          <span className="product-price-line">
+            <span className="product-price">{formatPrice(product.priceCents)}</span>
+            {hasMrp && <span className="product-price-old">MRP {formatPrice(product.mrpCents)}</span>}
+          </span>
           <button
             className="btn btn-sm btn-primary"
             disabled={out}

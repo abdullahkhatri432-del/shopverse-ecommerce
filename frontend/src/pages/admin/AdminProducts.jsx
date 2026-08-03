@@ -6,6 +6,7 @@ const EMPTY = {
   name: '',
   description: '',
   price: '',
+  mrp: '',
   imageUrl: '',
   category: 'general',
   stock: 0,
@@ -51,6 +52,7 @@ export default function AdminProducts() {
       name: p.name,
       description: p.description,
       price: p.price,
+      mrp: p.mrp || '',
       imageUrl: p.imageUrl,
       category: p.category,
       stock: p.stock,
@@ -84,7 +86,12 @@ export default function AdminProducts() {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = { ...form, price: Number(form.price), stock: Number(form.stock) };
+      const payload = {
+        ...form,
+        price: Number(form.price),
+        mrp: form.mrp ? Number(form.mrp) : null,
+        stock: Number(form.stock),
+      };
       if (editing === null) {
         await api.post('/admin/products', payload, { auth: true });
         push('Product created');
@@ -187,6 +194,17 @@ export default function AdminProducts() {
                 value={form.price}
                 onChange={set('price')}
                 required
+              />
+            </label>
+            <label className="field">
+              <span>MRP (optional, for discount display)</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.mrp}
+                onChange={set('mrp')}
+                placeholder="Leave empty to hide MRP"
               />
             </label>
             <div className="field">

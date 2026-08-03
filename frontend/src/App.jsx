@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import MobileNav from './components/MobileNav';
+import CartDrawer from './components/CartDrawer';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
@@ -45,6 +46,7 @@ export default function App() {
     <>
       <ScrollToTop />
       <Navbar />
+      <CartDrawer />
       <main className="main">
         <ErrorBoundary>
           <div key={location.pathname} className="page-fade">

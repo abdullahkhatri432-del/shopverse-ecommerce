@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { api, formatPrice } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -10,11 +10,11 @@ import Skeleton from '../components/Skeleton';
 import ProductSlider from '../components/ProductSlider';
 import Seo from '../components/Seo';
 import StarRating from '../components/StarRating';
+import ProductCard from '../components/ProductCard';
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const { add } = useCart();
+  const { add, openCart } = useCart();
   const { push } = useToast();
   const { user } = useAuth();
   const { has, toggle } = useWishlist();
@@ -22,6 +22,7 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState({ avgRating: 0, reviewCount: 0 });
   const [related, setRelated] = useState([]);
+  const [bundles, setBundles] = useState([]);
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -30,6 +31,11 @@ export default function ProductDetail() {
   const [myComment, setMyComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [reviewMsg, setReviewMsg] = useState(null);
+  const [activeTab, setActiveTab] = useState('description');
+  const [pincode, setPincode] = useState('');
+  const [checking, setChecking] = useState(false);
+  const [delivery, setDelivery] = useState(null);
+  const [deliveryError, setDeliveryError] = useState('');
 
   const loadReviews = useCallback(() => {
     setReviewsLoading(true);
@@ -66,11 +72,37 @@ export default function ProductDetail() {
       .catch(() => {});
   }, [id]);
 
+  useEffect(() => {
+    api
+      .get(`/products/recommend?limit=4&exclude=${id}`)
+      .then((d) => setBundles(d.products.slice(0, 3)))
+      .catch(() => {});
+  }, [id]);
+
   const handleAdd = () => {
     if (!product) return;
     add(product, qty);
     push(`${product.name} added to cart`);
-    navigate('/cart');
+    openCart();
+  };
+
+  const checkPincode = async () => {
+    if (!/^[1-9][0-9]{5}$/.test(pincode.trim())) {
+      setDeliveryError('Enter a valid 6-digit Indian pincode.');
+      setDelivery(null);
+      return;
+    }
+    setChecking(true);
+    setDeliveryError('');
+    try {
+      const data = await api.post('/shipping/check', { pincode: pincode.trim() });
+      setDelivery(data);
+    } catch (err) {
+      setDeliveryError(err.message);
+      setDelivery(null);
+    } finally {
+      setChecking(false);
+    }
   };
 
   const submitReview = async (e) => {
@@ -171,8 +203,49 @@ export default function ProductDetail() {
               </span>
             </span>
           )}
-          <p className="detail-price">{formatPrice(product.priceCents)}</p>
+          <p className="detail-price">
+            {formatPrice(product.priceCents)}
+            {product.mrpCents > product.priceCents && (
+              <>
+                <span className="detail-price-old">MRP {formatPrice(product.mrpCents)}</span>
+                <span className="detail-discount-badge">
+                  {product.discountPercent || Math.round(((product.mrpCents - product.priceCents) / product.mrpCents) * 100)}% OFF
+                </span>
+              </>
+            )}
+          </p>
           <p className="detail-tax-note">Inclusive of all taxes (GST)</p>
+          <div className="pincode-eta">
+            <div className="pincode-eta-row">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value.replace(/\D/g, ''))}
+                placeholder="Enter delivery pincode"
+                aria-label="Delivery pincode"
+              />
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={checkPincode}
+                disabled={checking}
+              >
+                {checking ? '...' : 'Check'}
+              </button>
+            </div>
+            {deliveryError && <p className="pincode-eta-result">{deliveryError}</p>}
+            {delivery && delivery.serviceable && (
+              <p className="pincode-eta-result">
+                <strong>Deliverable</strong> to {pincode} in {delivery.etaDays.min}–
+                {delivery.etaDays.max} business days
+              </p>
+            )}
+            {delivery && !delivery.serviceable && (
+              <p className="pincode-eta-result">{delivery.error}</p>
+            )}
+          </div>
           <p className="detail-desc">{product.description}</p>
           <p className="detail-meta">
             <span>
@@ -222,6 +295,92 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      <section className="pdp-tabs" aria-label="Product details">
+        <div className="pdp-tab-bar" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'description'}
+            className={`pdp-tab-btn ${activeTab === 'description' ? 'active' : ''}`}
+            onClick={() => setActiveTab('description')}
+          >
+            Description
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'specs'}
+            className={`pdp-tab-btn ${activeTab === 'specs' ? 'active' : ''}`}
+            onClick={() => setActiveTab('specs')}
+          >
+            Specifications
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'returns'}
+            className={`pdp-tab-btn ${activeTab === 'returns' ? 'active' : ''}`}
+            onClick={() => setActiveTab('returns')}
+          >
+            Delivery &amp; Returns
+          </button>
+        </div>
+        {activeTab === 'description' && (
+          <div className="pdp-tab-panel" role="tabpanel">
+            <p>{product.description || 'No description available for this product yet.'}</p>
+          </div>
+        )}
+        {activeTab === 'specs' && (
+          <div className="pdp-tab-panel" role="tabpanel">
+            <ul className="pdp-spec-list">
+              <li>
+                <span>Category</span>
+                <span>{product.category}</span>
+              </li>
+              <li>
+                <span>Country of origin</span>
+                <span>{product.countryOfOrigin || 'India'}</span>
+              </li>
+              <li>
+                <span>MRP (incl. GST)</span>
+                <span>{formatPrice(product.mrpCents || product.priceCents)}</span>
+              </li>
+              <li>
+                <span>Selling price</span>
+                <span>{formatPrice(product.priceCents)}</span>
+              </li>
+            </ul>
+          </div>
+        )}
+        {activeTab === 'returns' && (
+          <div className="pdp-tab-panel" role="tabpanel">
+            <h4>Delivery</h4>
+            <p>
+              Free shipping on orders over ₹999. Standard delivery takes 3–7 business days. Use the
+              pincode checker above for an exact estimate.
+            </p>
+            <h4>Returns</h4>
+            <p>
+              Easy 7-day returns and exchanges on eligible items. Products must be unused and in
+              their original packaging. Refunds are processed within 5–7 business days of pickup.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {bundles.length > 0 && (
+        <section className="bundles" aria-label="Frequently bought together">
+          <div className="section-head">
+            <h2 className="section-title">Frequently bought together</h2>
+          </div>
+          <div className="bundle-grid">
+            {bundles.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="reviews" aria-label="Product reviews">
         <div className="section-head">

@@ -103,6 +103,12 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id),
     UNIQUE (product_id, user_id)
   );
+
+  CREATE TABLE IF NOT EXISTS newsletter_emails (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // Backfill the categories table from any existing products (and a default).
@@ -122,6 +128,8 @@ const orderMigrations = {
   gstin: "ALTER TABLE orders ADD COLUMN gstin TEXT NOT NULL DEFAULT ''",
   billing_state: "ALTER TABLE orders ADD COLUMN billing_state TEXT NOT NULL DEFAULT ''",
   invoice_number: 'ALTER TABLE orders ADD COLUMN invoice_number TEXT',
+  discount_cents: 'ALTER TABLE orders ADD COLUMN discount_cents INTEGER NOT NULL DEFAULT 0',
+  promo_code: "ALTER TABLE orders ADD COLUMN promo_code TEXT NOT NULL DEFAULT ''",
 };
 for (const [col, sql] of Object.entries(orderMigrations)) {
   if (!orderColumns.includes(col)) db.exec(sql);
@@ -142,6 +150,10 @@ const productColumns = db
 if (!productColumns.includes('country_of_origin')) {
   db.exec("ALTER TABLE products ADD COLUMN country_of_origin TEXT NOT NULL DEFAULT 'India'");
 }
+if (!productColumns.includes('mrp_cents')) {
+  db.exec('ALTER TABLE products ADD COLUMN mrp_cents INTEGER');
+  db.exec('UPDATE products SET mrp_cents = ROUND(price_cents * 1.25, -2) WHERE mrp_cents IS NULL');
+}
 
 function toProduct(row) {
   return {
@@ -150,6 +162,11 @@ function toProduct(row) {
     description: row.description,
     price: row.price_cents / 100,
     priceCents: row.price_cents,
+    mrp: row.mrp_cents ? row.mrp_cents / 100 : null,
+    mrpCents: row.mrp_cents || null,
+    discountPercent: row.mrp_cents && row.mrp_cents > row.price_cents
+      ? Math.round(((row.mrp_cents - row.price_cents) / row.mrp_cents) * 100)
+      : 0,
     imageUrl: row.image_url,
     category: row.category,
     stock: row.stock,

@@ -4,6 +4,7 @@ const { db } = require('../db');
 const { validateGstin, isValidState, generateInvoiceNumber } = require('../gst');
 const { sendOrderConfirmation, sendAdminNewOrder } = require('../mailer');
 const { razorpayEnabled, mockAllowed, onlineAvailable } = require('../payments');
+const { applyPromo } = require('../promos');
 
 const router = express.Router();
 
@@ -27,6 +28,19 @@ router.get('/config', (req, res) => {
     codEnabled: process.env.COD_ENABLED !== 'false',
   });
 });
+
+router.post('/promo', (req, res) => {
+  const { code, subtotalCents } = req.body || {};
+  const base = Number(subtotalCents);
+  if (!Number.isFinite(base) || base <= 0) {
+    return res.status(400).json({ error: 'A valid subtotal is required' });
+  }
+  const promo = applyPromo(code, base);
+  if (!promo) {
+    return res.status(400).json({ error: 'That promo code is not valid' });
+  }
+  res.json({ valid: true, ...promo, subtotalCents: base });
+});
 router.post('/', async (req, res) => {
   const {
     items,
@@ -38,6 +52,7 @@ router.post('/', async (req, res) => {
     billingState,
     paymentMethod,
     expectedTotalCents,
+    promoCode,
   } = req.body || {};
 
   if (!Array.isArray(items) || items.length === 0) {
@@ -104,23 +119,29 @@ router.post('/', async (req, res) => {
     });
   }
 
+  const promo = applyPromo(promoCode, totalCents);
+  const discountCents = promo ? promo.discountCents : 0;
+  const payableCents = totalCents - discountCents;
+
   for (const [productId, qty] of quantities) {
     db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?').run(qty, productId);
   }
 
   const insertOrder = db.prepare(`
-    INSERT INTO orders (user_id, total_cents, status, payment_method, customer_name, customer_email, customer_address, company_name, gstin, billing_state)
-    VALUES (NULL, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (user_id, total_cents, status, payment_method, customer_name, customer_email, customer_address, company_name, gstin, billing_state, discount_cents, promo_code)
+    VALUES (NULL, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const orderId = insertOrder.run(
-    totalCents,
+    payableCents,
     method === 'cod' ? 'cod' : razorpayEnabled() ? 'razorpay' : 'mock',
     String(customerName).trim(),
     String(customerEmail).trim(),
     String(customerAddress || '').trim(),
     String(companyName || '').trim(),
     gstinClean,
-    stateClean
+    stateClean,
+    discountCents,
+    promo ? promo.code : ''
   ).lastInsertRowid;
 
   const insertItem = db.prepare(`
@@ -139,9 +160,11 @@ router.post('/', async (req, res) => {
     return res.status(201).json({
       orderId,
       paymentMethod: 'cod',
-      amount: totalCents,
+      amount: payableCents,
       currency,
       status: 'pending',
+      discountCents,
+      promoCode: promo ? promo.code : null,
     });
   }
 
@@ -149,15 +172,17 @@ router.post('/', async (req, res) => {
     return res.status(201).json({
       orderId,
       paymentMethod: 'mock',
-      amount: totalCents,
+      amount: payableCents,
       currency,
+      discountCents,
+      promoCode: promo ? promo.code : null,
     });
   }
 
   try {
     const razorpay = getRazorpay();
     const rzpOrder = await razorpay.orders.create({
-      amount: totalCents,
+      amount: payableCents,
       currency,
       receipt: `shopverse_${orderId}`,
       notes: { order_id: String(orderId) },
@@ -167,8 +192,10 @@ router.post('/', async (req, res) => {
       paymentMethod: 'razorpay',
       razorpayOrderId: rzpOrder.id,
       razorpayKeyId: process.env.RAZORPAY_KEY_ID,
-      amount: totalCents,
+      amount: payableCents,
       currency,
+      discountCents,
+      promoCode: promo ? promo.code : null,
     });
   } catch (err) {
     const detail =

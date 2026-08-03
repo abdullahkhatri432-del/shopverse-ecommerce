@@ -1,4 +1,5 @@
 const express = require('express');
+const { promoList } = require('../promos');
 
 const router = express.Router();
 
@@ -14,6 +15,8 @@ router.get('/', (req, res) => {
     codEnabled: process.env.COD_ENABLED !== 'false',
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     googleEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    promos: promoList(),
+    freeShippingThresholdCents: 99900,
     store: {
       name: process.env.STORE_NAME || 'ShopVerse',
       legalName: process.env.STORE_LEGAL_NAME || 'Your Legal Business Name',

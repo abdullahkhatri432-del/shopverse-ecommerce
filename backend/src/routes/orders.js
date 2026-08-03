@@ -63,11 +63,16 @@ function buildOrderObject(order) {
       quantity: i.quantity,
       category: i.category,
     }));
+  const subtotalCents = items.reduce((s, i) => s + i.priceCents * i.quantity, 0);
+  const discountCents = order.discount_cents || 0;
   return {
     id: order.id,
     userId: order.user_id,
     total: order.total_cents / 100,
     totalCents: order.total_cents,
+    subtotalCents,
+    discountCents,
+    promoCode: order.promo_code || null,
     status: order.status,
     paymentMethod: order.payment_method,
     customerName: order.customer_name,
@@ -120,7 +125,8 @@ function computeInvoice(order) {
   const sgstTotal = items.reduce((s, i) => s + i.sgst, 0);
   const igstTotal = items.reduce((s, i) => s + i.igst, 0);
   const gstTotal = cgstTotal + sgstTotal + igstTotal;
-  const totalCents = subtotalCents + gstTotal;
+  const discountCents = order.discount_cents || 0;
+  const totalCents = subtotalCents + gstTotal - discountCents;
 
   return {
     invoiceNumber: order.invoice_number || generateInvoiceNumber(order.id),
@@ -142,6 +148,8 @@ function computeInvoice(order) {
       sgst: sgstTotal,
       igst: igstTotal,
       gst: gstTotal,
+      discountCents,
+      promoCode: order.promo_code || null,
       totalCents,
     },
   };
@@ -420,6 +428,10 @@ router.get('/:id/invoice.pdf', (req, res) => {
   }
   if (invoice.totals.igst > 0) {
     doc.text(`IGST: ${rupee(invoice.totals.igst)}`, 380, y, { width: 190, align: 'right' });
+    y += 14;
+  }
+  if (invoice.totals.discountCents > 0) {
+    doc.text(`Promo discount (${invoice.totals.promoCode || ''}): -${rupee(invoice.totals.discountCents)}`, 380, y, { width: 190, align: 'right' });
     y += 14;
   }
   doc.font('Helvetica-Bold').text(`Grand Total: ${rupee(invoice.totals.totalCents)}`, 380, y, { width: 190, align: 'right' });
