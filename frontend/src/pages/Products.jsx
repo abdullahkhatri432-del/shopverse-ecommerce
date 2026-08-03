@@ -1,0 +1,142 @@
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { api } from '../lib/api';
+import ProductCard from '../components/ProductCard';
+
+export default function Products() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const category = searchParams.get('category') || '';
+  const search = searchParams.get('search') || '';
+  const sort = searchParams.get('sort') || 'newest';
+  const maxPrice = searchParams.get('maxPrice') || '';
+
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [localSearch, setLocalSearch] = useState(search);
+
+  useEffect(() => {
+    api
+      .get('/products/categories')
+      .then((d) => setCategories(d.categories))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (category) params.set('category', category);
+    if (sort) params.set('sort', sort);
+    if (maxPrice) params.set('maxPrice', maxPrice);
+    api
+      .get(`/products?${params.toString()}`)
+      .then((d) => {
+        setProducts(d.products);
+        setTotal(d.total);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [category, search, sort, maxPrice]);
+
+  const updateParam = (key, value) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    updateParam('search', localSearch.trim());
+  };
+
+  return (
+    <div className="container section">
+      <h1 className="page-title">Shop</h1>
+
+      <form onSubmit={handleSearchSubmit} className="search-bar">
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+        />
+        <button type="submit" className="btn btn-primary">
+          Search
+        </button>
+      </form>
+
+      <div className="shop-layout">
+        <aside className="filters">
+          <h3>Categories</h3>
+          <button
+            className={`filter-chip ${category === '' ? 'active' : ''}`}
+            onClick={() => updateParam('category', '')}
+          >
+            All
+          </button>
+          {categories.map((c) => (
+            <button
+              key={c}
+              className={`filter-chip ${category === c ? 'active' : ''}`}
+              onClick={() => updateParam('category', c)}
+            >
+              {c}
+            </button>
+          ))}
+
+          <h3>Max price</h3>
+          <select
+            value={maxPrice}
+            onChange={(e) => updateParam('maxPrice', e.target.value)}
+            className="select-full"
+          >
+            <option value="">Any price</option>
+            <option value="25">Under $25</option>
+            <option value="50">Under $50</option>
+            <option value="100">Under $100</option>
+            <option value="250">Under $250</option>
+            <option value="500">Under $500</option>
+            <option value="1000">Under $1000</option>
+          </select>
+
+          <h3>Sort</h3>
+          <select
+            value={sort}
+            onChange={(e) => updateParam('sort', e.target.value)}
+            className="select-full"
+          >
+            <option value="newest">Newest</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </aside>
+
+        <div className="shop-results">
+          <p className="results-count">
+            {loading ? 'Loading...' : `${total} product${total === 1 ? '' : 's'} found`}
+          </p>
+          {loading ? (
+            <div className="page-loading">Loading products...</div>
+          ) : products.length === 0 ? (
+            <div className="empty-state">
+              <p>No products match your filters.</p>
+              <button className="btn btn-primary" onClick={() => setSearchParams({})}>
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <div className="product-grid">
+              {products.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
