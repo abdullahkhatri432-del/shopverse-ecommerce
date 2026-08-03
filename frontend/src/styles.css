@@ -3564,6 +3564,39 @@ textarea:focus {
   box-shadow: var(--shadow);
 }
 
+/* ---------- Admin discount preview ---------- */
+.discount-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--primary-light);
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+}
+
+.discount-badge-preview {
+  background: var(--danger);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.discount-price-preview {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.discount-savings-preview {
+  color: var(--success);
+  font-weight: 600;
+  font-size: 13px;
+}
+
 /* ---------- Footer ---------- */
 .footer-top {
   display: grid;

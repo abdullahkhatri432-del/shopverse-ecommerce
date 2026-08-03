@@ -206,6 +206,19 @@ export default function AdminProducts() {
                 onChange={set('mrp')}
                 placeholder="Leave empty to hide MRP"
               />
+              {form.mrp && form.price && Number(form.mrp) > Number(form.price) && (
+                <div className="discount-preview">
+                  <span className="discount-badge-preview">
+                    {Math.round(((Number(form.mrp) - Number(form.price)) / Number(form.mrp)) * 100)}% OFF
+                  </span>
+                  <span className="discount-price-preview">
+                    Final price: ₹{Number(form.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="discount-savings-preview">
+                    You save: ₹{(Number(form.mrp) - Number(form.price)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
             </label>
             <div className="field">
               <span>Product image</span>
