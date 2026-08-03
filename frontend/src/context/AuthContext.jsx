@@ -55,8 +55,40 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateProfile = async (profileData) => {
+    const data = await api.put('/auth/profile', profileData, { auth: true });
+    setUser(data.user);
+    return data.user;
+  };
+
+  const updatePrivacy = async (privacyData) => {
+    const data = await api.put('/auth/privacy', privacyData, { auth: true });
+    setUser(data.user);
+    return data.user;
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    const data = await api.put('/auth/password', { currentPassword, newPassword }, { auth: true });
+    return data;
+  };
+
+  const uploadAvatar = async (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const token = localStorage.getItem('sv_token');
+    const res = await fetch('/api/auth/avatar', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    setUser(data.user);
+    return data.user;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout, updateProfile, updatePrivacy, changePassword, uploadAvatar }}>
       {children}
     </AuthContext.Provider>
   );

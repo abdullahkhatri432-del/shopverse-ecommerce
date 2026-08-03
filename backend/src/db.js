@@ -15,7 +15,15 @@ db.exec(`
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'customer',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    phone TEXT NOT NULL DEFAULT '',
+    address TEXT NOT NULL DEFAULT '',
+    date_of_birth TEXT,
+    avatar_url TEXT NOT NULL DEFAULT '',
+    marketing_emails INTEGER NOT NULL DEFAULT 1,
+    data_processing_consent INTEGER NOT NULL DEFAULT 1,
+    newsletter_subscribed INTEGER NOT NULL DEFAULT 1,
+    sms_notifications INTEGER NOT NULL DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS products (
@@ -157,6 +165,24 @@ if (!productColumns.includes('mrp_cents')) {
   db.exec('UPDATE products SET mrp_cents = ROUND(price_cents * 1.25, -2) WHERE mrp_cents IS NULL');
 }
 
+const userColumns = db
+  .prepare('PRAGMA table_info(users)')
+  .all()
+  .map((c) => c.name);
+const userMigrations = {
+  phone: "ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''",
+  address: "ALTER TABLE users ADD COLUMN address TEXT NOT NULL DEFAULT ''",
+  date_of_birth: 'ALTER TABLE users ADD COLUMN date_of_birth TEXT',
+  avatar_url: "ALTER TABLE users ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''",
+  marketing_emails: 'ALTER TABLE users ADD COLUMN marketing_emails INTEGER NOT NULL DEFAULT 1',
+  data_processing_consent: 'ALTER TABLE users ADD COLUMN data_processing_consent INTEGER NOT NULL DEFAULT 1',
+  newsletter_subscribed: 'ALTER TABLE users ADD COLUMN newsletter_subscribed INTEGER NOT NULL DEFAULT 1',
+  sms_notifications: 'ALTER TABLE users ADD COLUMN sms_notifications INTEGER NOT NULL DEFAULT 0',
+};
+for (const [col, sql] of Object.entries(userMigrations)) {
+  if (!userColumns.includes(col)) db.exec(sql);
+}
+
 function toProduct(row) {
   return {
     id: row.id,
@@ -186,6 +212,14 @@ function toUser(row) {
     email: row.email,
     role: row.role,
     createdAt: row.created_at,
+    phone: row.phone || '',
+    address: row.address || '',
+    dateOfBirth: row.date_of_birth || '',
+    avatarUrl: row.avatar_url || '',
+    marketingEmails: Boolean(row.marketing_emails),
+    dataProcessingConsent: Boolean(row.data_processing_consent),
+    newsletterSubscribed: Boolean(row.newsletter_subscribed),
+    smsNotifications: Boolean(row.sms_notifications),
   };
 }
 
