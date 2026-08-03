@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import SearchSuggest from './SearchSuggest';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -40,6 +41,13 @@ export default function Navbar() {
             Shop
           </NavLink>
         </nav>
+        <div className="nav-search">
+          <SearchSuggest
+            onSearch={(q) => navigate(`/products?search=${encodeURIComponent(q)}`)}
+            onCategory={(c) => navigate(`/products?category=${encodeURIComponent(c)}`)}
+            onProduct={(p) => navigate(`/product/${p.id}`)}
+          />
+        </div>
         <div className="nav-actions">
           <Link to="/wishlist" className="icon-link" aria-label={`Wishlist, ${wishCount} items`}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">

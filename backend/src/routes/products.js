@@ -98,6 +98,81 @@ router.get('/featured', (req, res) => {
   res.json({ products: rows.map(toProduct) });
 });
 
+router.get('/suggest', (req, res) => {
+  const q = String(req.query.q || '').trim();
+
+  if (!q) {
+    const categories = db
+      .prepare('SELECT name FROM categories ORDER BY name LIMIT 6')
+      .all()
+      .map((r) => r.name);
+    const products = db
+      .prepare(
+        'SELECT * FROM products WHERE stock > 0 ORDER BY featured DESC, created_at DESC LIMIT 5'
+      )
+      .all();
+    return res.json({ suggestions: [], categories, products: products.map(toProduct) });
+  }
+
+  const like = `%${q}%`;
+  const prefix = `${q}%`;
+  const word = `% ${q}%`;
+  const products = db
+    .prepare(
+      `SELECT * FROM products
+       WHERE name LIKE ? OR description LIKE ?
+       ORDER BY (name LIKE ?) DESC, (name LIKE ?) DESC, featured DESC, created_at DESC
+       LIMIT 6`
+    )
+    .all(like, like, prefix, word);
+  const categories = db
+    .prepare('SELECT name FROM categories WHERE name LIKE ? ORDER BY name LIMIT 4')
+    .all(like)
+    .map((r) => r.name);
+  const suggestions = products.slice(0, 4).map((p) => p.name);
+  res.json({ suggestions, categories, products: products.map(toProduct) });
+});
+
+router.get('/related/:id', (req, res) => {
+  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  let rows = db
+    .prepare(
+      'SELECT * FROM products WHERE category = ? AND id != ? AND stock > 0 ORDER BY featured DESC, created_at DESC LIMIT 8'
+    )
+    .all(product.category, product.id);
+  if (rows.length === 0) {
+    rows = db
+      .prepare(
+        'SELECT * FROM products WHERE id != ? AND stock > 0 ORDER BY featured DESC, created_at DESC LIMIT 8'
+      )
+      .all(product.id);
+  }
+  res.json({ products: rows.map(toProduct) });
+});
+
+router.get('/recommend', (req, res) => {
+  const exclude = String(req.query.exclude || '')
+    .split(',')
+    .map(Number)
+    .filter((n) => Number.isInteger(n) && n > 0);
+  const limit = Math.min(parseInt(req.query.limit, 10) || 8, 24);
+
+  let sql = `SELECT p.*, COUNT(oi.id) AS ordered
+             FROM products p
+             LEFT JOIN order_items oi ON oi.product_id = p.id
+             WHERE p.stock > 0`;
+  const params = [];
+  if (exclude.length) {
+    sql += ` AND p.id NOT IN (${exclude.map(() => '?').join(',')})`;
+    params.push(...exclude);
+  }
+  sql += ' GROUP BY p.id ORDER BY ordered DESC, p.featured DESC, p.created_at DESC LIMIT ?';
+  params.push(limit);
+  const rows = db.prepare(sql).all(...params);
+  res.json({ products: rows.map(toProduct) });
+});
+
 router.get('/:id', (req, res) => {
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
   if (!product) return res.status(404).json({ error: 'Product not found' });

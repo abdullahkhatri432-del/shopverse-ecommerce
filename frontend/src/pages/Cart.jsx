@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { api, formatPrice } from '../lib/api';
+import ProductSlider from '../components/ProductSlider';
 import EmptyState from '../components/EmptyState';
 import Seo from '../components/Seo';
 
@@ -13,6 +14,16 @@ export default function Cart() {
   const [checking, setChecking] = useState(false);
   const [delivery, setDelivery] = useState(null);
   const [deliveryError, setDeliveryError] = useState('');
+  const [recommended, setRecommended] = useState([]);
+
+  const excludeIds = items.map((i) => i.productId).join(',');
+
+  useEffect(() => {
+    api
+      .get(`/products/recommend?limit=8&exclude=${excludeIds}`)
+      .then((d) => setRecommended(d.products))
+      .catch(() => {});
+  }, [excludeIds]);
 
   if (items.length === 0) {
     return (
@@ -165,6 +176,10 @@ export default function Cart() {
           </Link>
         </div>
       </div>
+
+      {recommended.length > 0 && (
+        <ProductSlider title="Frequently bought together" viewAll="/products" products={recommended} />
+      )}
     </div>
   );
 }

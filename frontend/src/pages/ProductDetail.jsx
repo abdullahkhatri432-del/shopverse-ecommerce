@@ -7,6 +7,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
 import { addRecentlyViewed } from '../lib/recentlyViewed';
 import Skeleton from '../components/Skeleton';
+import ProductSlider from '../components/ProductSlider';
 import Seo from '../components/Seo';
 import StarRating from '../components/StarRating';
 
@@ -20,6 +21,7 @@ export default function ProductDetail() {
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState({ avgRating: 0, reviewCount: 0 });
+  const [related, setRelated] = useState([]);
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -56,6 +58,13 @@ export default function ProductDetail() {
       .finally(() => setLoading(false));
     loadReviews();
   }, [id, loadReviews]);
+
+  useEffect(() => {
+    api
+      .get(`/products/related/${id}`)
+      .then((d) => setRelated(d.products))
+      .catch(() => {});
+  }, [id]);
 
   const handleAdd = () => {
     if (!product) return;
@@ -275,6 +284,14 @@ export default function ProductDetail() {
           </div>
         )}
       </section>
+
+      {related.length > 0 && (
+        <ProductSlider
+          title="You might also like"
+          viewAll={`/products?category=${encodeURIComponent(product.category)}`}
+          products={related}
+        />
+      )}
     </div>
   );
 }

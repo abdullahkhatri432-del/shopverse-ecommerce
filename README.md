@@ -13,6 +13,7 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 - **Order tracking** — status stepper (placed → packed → shipped → out for delivery → delivered), estimated delivery dates, order cancellation, and **return/refund requests** within 7 days of delivery
 - **Wishlist & recently viewed** — save products for later (wishlist page + heart on every card), and a "Recently viewed" row on the home page
 - **Promotional banners** — an auto-playing hero **slideshow** of offers (arrows + dots, pauses on hover, respects reduced-motion), sliding **product carousels** (Featured, Top picks, Recently viewed), and a big **Deals-of-the-day** offer banner with a live countdown
+- **Smart search & recommendations** — an autocomplete **search box in the navbar** (and on the shop page) that suggests matching products with thumbnails + prices, matching categories, and trending searches; **cross-sells everywhere** so shoppers keep browsing — "You might also like" on every product page, "Frequently bought together" on the cart, and "Popular right now" when a search finds nothing
 - **User-friendly polish** — loading skeletons, friendly empty states, page transitions, breadcrumbs, hover micro-interactions, a **mobile bottom nav**, focus-visible + reduced-motion accessibility, and a trust strip (free delivery, COD, returns)
 - **Legal & compliance** — Terms, Privacy (DPDP-ready), Refund, Shipping, Cancellation, Grievance Officer, Seller Info and Contact pages, grievance officer details in the footer, plus a cookie/local-storage consent banner
 - **User accounts** — sign in with **Google** or **email + password** (verified, duplicate-free) and view order history + GST invoices
@@ -173,6 +174,9 @@ admin marks them **delivered**. They never touch a payment gateway.
 | GET    | `/api/products/:id`             | Single product                  | –        |
 | GET    | `/api/products/categories`      | Distinct categories             | –        |
 | GET    | `/api/products/featured`        | Featured products               | –        |
+| GET    | `/api/products/suggest?q=`      | Search suggestions (products + categories, trending when empty) | – |
+| GET    | `/api/products/related/:id`     | Same-category products          | –        |
+| GET    | `/api/products/recommend?limit=&exclude=` | Popular products, excluding ids | – |
 | GET    | `/api/config`                   | Payment + store/legal info      | –        |
 | POST   | `/api/checkout`                 | Create order + start payment    | –        |
 | GET    | `/api/checkout/config`          | Currency & payment provider info| –        |

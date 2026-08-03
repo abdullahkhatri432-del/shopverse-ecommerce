@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import ProductCard from '../components/ProductCard';
+import ProductSlider from '../components/ProductSlider';
+import SearchSuggest from '../components/SearchSuggest';
 import Skeleton from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import Seo from '../components/Seo';
 
 export default function Products() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const category = searchParams.get('category') || '';
   const search = searchParams.get('search') || '';
@@ -20,6 +23,7 @@ export default function Products() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [localSearch, setLocalSearch] = useState(search);
+  const [fallback, setFallback] = useState([]);
 
   useEffect(() => {
     api
@@ -48,6 +52,15 @@ export default function Products() {
   }, [category, search, sort, minPrice, maxPrice, inStock]);
 
   useEffect(() => {
+    if (!loading && products.length === 0 && total === 0) {
+      api
+        .get('/products/recommend?limit=8')
+        .then((d) => setFallback(d.products))
+        .catch(() => {});
+    }
+  }, [loading, products.length, total]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       const next = new URLSearchParams(searchParams);
       if (localSearch.trim()) next.set('search', localSearch.trim());
@@ -63,11 +76,6 @@ export default function Products() {
     if (value) next.set(key, value);
     else next.delete(key);
     setSearchParams(next, { replace: true });
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    updateParam('search', localSearch.trim());
   };
 
   return (
@@ -89,17 +97,20 @@ export default function Products() {
       </nav>
       <h1 className="page-title">Shop</h1>
 
-      <form onSubmit={handleSearchSubmit} className="search-bar">
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-        />
-        <button type="submit" className="btn btn-primary">
-          Search
-        </button>
-      </form>
+      <SearchSuggest
+        className="products-search"
+        value={localSearch}
+        onValueChange={setLocalSearch}
+        onSearch={(q) => updateParam('search', q)}
+        onCategory={(c) => {
+          const next = new URLSearchParams(searchParams);
+          next.delete('search');
+          next.set('category', c);
+          setSearchParams(next, { replace: true });
+          setLocalSearch('');
+        }}
+        onProduct={(p) => navigate(`/product/${p.id}`)}
+      />
 
       <div className="shop-layout">
         <aside className="filters">
@@ -191,14 +202,19 @@ export default function Products() {
               ))}
             </div>
           ) : products.length === 0 ? (
-            <EmptyState
-              title="No products found"
-              subtitle="Try adjusting your search or filters."
-            >
-              <button className="btn btn-primary" onClick={() => setSearchParams({})}>
-                Clear filters
-              </button>
-            </EmptyState>
+            <>
+              <EmptyState
+                title="No products found"
+                subtitle="Try adjusting your search or filters."
+              >
+                <button className="btn btn-primary" onClick={() => setSearchParams({})}>
+                  Clear filters
+                </button>
+              </EmptyState>
+              {fallback.length > 0 && (
+                <ProductSlider title="Popular right now" viewAll="/products" products={fallback} />
+              )}
+            </>
           ) : (
             <div className="product-grid">
               {products.map((p) => (
