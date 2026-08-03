@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api, formatPrice } from '../lib/api';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
+import Seo from '../components/Seo';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -49,6 +50,11 @@ export default function ProductDetail() {
 
   return (
     <div className="container section">
+      <Seo
+        title={`${product.name} - ShopVerse`}
+        description={product.description?.slice(0, 160) || `${product.name} at ShopVerse.`}
+        type="product"
+      />
       <Link to="/products" className="link back-link">
         ← Back to shop
       </Link>
@@ -57,6 +63,7 @@ export default function ProductDetail() {
           <img
             src={product.imageUrl}
             alt={product.name}
+            loading="lazy"
             onError={(e) => {
               e.currentTarget.src =
                 'data:image/svg+xml;utf8,' +
@@ -70,7 +77,13 @@ export default function ProductDetail() {
           <span className="product-category">{product.category}</span>
           <h1 className="detail-title">{product.name}</h1>
           <p className="detail-price">{formatPrice(product.priceCents)}</p>
+          <p className="detail-tax-note">Inclusive of all taxes (GST)</p>
           <p className="detail-desc">{product.description}</p>
+          <p className="detail-meta">
+            <span>
+              <strong>Country of origin:</strong> {product.countryOfOrigin || 'India'}
+            </span>
+          </p>
           <p className={`stock-badge ${out ? 'out' : ''}`}>
             {out ? 'Out of stock' : `${product.stock} in stock`}
           </p>

@@ -42,6 +42,7 @@ external processes you must complete before taking live payments in India.
 1. Set a strong `JWT_SECRET` in `.env`.
 2. Fill in all `STORE_*` and `GRIEVANCE_OFFICER_*` values in `.env`.
 3. Obtain GST registration and set `STORE_GSTIN`.
-4. Switch on Razorpay live keys.
+4. Switch on Razorpay live keys (mock payments are **disabled automatically** when `NODE_ENV=production`; COD stays available if `COD_ENABLED=true`).
 5. Review the placeholder company details shown on the legal pages and on invoices.
 6. Serve the frontend over HTTPS behind a reverse proxy (e.g. Nginx/Caddy) in production.
+7. Configure Google OAuth (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`) so customers can sign in with a verified email.

@@ -27,7 +27,34 @@ db.exec(`
     category TEXT NOT NULL DEFAULT 'general',
     stock INTEGER NOT NULL DEFAULT 0,
     featured INTEGER NOT NULL DEFAULT 0,
+    country_of_origin TEXT NOT NULL DEFAULT 'India',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS carts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER UNIQUE,
+    cart_token TEXT UNIQUE,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS cart_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cart_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS order_returns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    reason TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'requested',
+    requested_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS orders (
@@ -95,6 +122,14 @@ if (!itemColumns.includes('category')) {
   db.exec("ALTER TABLE order_items ADD COLUMN category TEXT NOT NULL DEFAULT 'general'");
 }
 
+const productColumns = db
+  .prepare('PRAGMA table_info(products)')
+  .all()
+  .map((c) => c.name);
+if (!productColumns.includes('country_of_origin')) {
+  db.exec("ALTER TABLE products ADD COLUMN country_of_origin TEXT NOT NULL DEFAULT 'India'");
+}
+
 function toProduct(row) {
   return {
     id: row.id,
@@ -106,6 +141,7 @@ function toProduct(row) {
     category: row.category,
     stock: row.stock,
     featured: !!row.featured,
+    countryOfOrigin: row.country_of_origin || 'India',
     createdAt: row.created_at,
   };
 }

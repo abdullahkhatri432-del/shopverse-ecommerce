@@ -5,6 +5,49 @@ const { signToken, requireAuth } = require('../auth');
 
 const router = express.Router();
 
+function upsertGoogleUser(payload) {
+  const email = String(payload.email).trim().toLowerCase();
+  const name = String(payload.name || payload.given_name || email.split('@')[0]).trim();
+  let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  if (user) {
+    db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name, user.id);
+    user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+  } else {
+    const result = db
+      .prepare('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)')
+      .run(name, email, 'GOOGLE_OAUTH_PLACEHOLDER');
+    user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+  }
+  return user;
+}
+
+router.post('/google', async (req, res) => {
+  const { idToken } = req.body || {};
+  if (!idToken) {
+    return res.status(400).json({ error: 'Google credential is required' });
+  }
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    return res.status(503).json({ error: 'Google sign-in is not configured on this server' });
+  }
+  try {
+    const { OAuth2Client } = require('google-auth-library');
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email || payload.email_verified !== true) {
+      return res.status(401).json({ error: 'Google email is not verified' });
+    }
+    const user = upsertGoogleUser(payload);
+    res.json({ token: signToken(user), user: toUser(user) });
+  } catch (err) {
+    console.error('[auth:google] verification failed:', err.message);
+    return res.status(401).json({ error: 'Invalid Google credential' });
+  }
+});
+
 router.post('/register', (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password) {

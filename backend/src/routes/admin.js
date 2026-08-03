@@ -54,7 +54,7 @@ function validateCategory(category) {
 }
 
 router.post('/products', (req, res) => {
-  const { name, description, price, imageUrl, category, stock, featured } = req.body || {};
+  const { name, description, price, imageUrl, category, stock, featured, countryOfOrigin } = req.body || {};
   if (!name || price === undefined || price === null) {
     return res.status(400).json({ error: 'Name and price are required' });
   }
@@ -66,8 +66,8 @@ router.post('/products', (req, res) => {
   if (cat.error) return res.status(400).json({ error: cat.error });
   const result = db
     .prepare(
-      `INSERT INTO products (name, description, price_cents, image_url, category, stock, featured)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO products (name, description, price_cents, image_url, category, stock, featured, country_of_origin)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       String(name).trim(),
@@ -76,7 +76,8 @@ router.post('/products', (req, res) => {
       String(imageUrl || ''),
       cat.clean,
       Math.max(0, Math.floor(Number(stock) || 0)),
-      featured ? 1 : 0
+      featured ? 1 : 0,
+      String(countryOfOrigin || 'India').trim() || 'India'
     );
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json({ product: toProduct(product) });
@@ -86,7 +87,7 @@ router.put('/products/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Product not found' });
 
-  const { name, description, price, imageUrl, category, stock, featured } = req.body || {};
+  const { name, description, price, imageUrl, category, stock, featured, countryOfOrigin } = req.body || {};
   const priceCents =
     price !== undefined && price !== null ? Math.round(Number(price) * 100) : existing.price_cents;
   if (!Number.isFinite(priceCents) || priceCents < 0) {
@@ -100,7 +101,7 @@ router.put('/products/:id', (req, res) => {
 
   db.prepare(
     `UPDATE products SET
-       name = ?, description = ?, price_cents = ?, image_url = ?, category = ?, stock = ?, featured = ?
+       name = ?, description = ?, price_cents = ?, image_url = ?, category = ?, stock = ?, featured = ?, country_of_origin = ?
      WHERE id = ?`
   ).run(
     name !== undefined ? String(name).trim() : existing.name,
@@ -110,6 +111,9 @@ router.put('/products/:id', (req, res) => {
     cat.clean,
     stock !== undefined ? Math.max(0, Math.floor(Number(stock) || 0)) : existing.stock,
     featured !== undefined ? (featured ? 1 : 0) : existing.featured,
+    countryOfOrigin !== undefined
+      ? String(countryOfOrigin).trim() || 'India'
+      : existing.country_of_origin || 'India',
     existing.id
   );
 
@@ -173,13 +177,44 @@ router.get('/orders', (req, res) => {
 
 router.patch('/orders/:id/status', (req, res) => {
   const { status } = req.body || {};
-  const allowed = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
+  const allowed = [
+    'pending',
+    'paid',
+    'packed',
+    'shipped',
+    'out_for_delivery',
+    'delivered',
+    'return_requested',
+    'return_approved',
+    'returned',
+    'cancelled',
+  ];
   if (!allowed.includes(status)) {
     return res.status(400).json({ error: `Status must be one of: ${allowed.join(', ')}` });
   }
   const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Order not found' });
+
+  if (status === 'cancelled' || status === 'returned') {
+    const prev = existing.status;
+    const alreadyReversed = ['cancelled', 'returned'].includes(prev);
+    if (!alreadyReversed) {
+      const items = db
+        .prepare('SELECT product_id, quantity FROM order_items WHERE order_id = ?')
+        .all(existing.id);
+      const restock = db.prepare('UPDATE products SET stock = stock + ? WHERE id = ?');
+      for (const i of items) {
+        if (i.product_id) restock.run(i.quantity, i.product_id);
+      }
+    }
+  }
+
   db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, existing.id);
+  if (status === 'paid' && !existing.invoice_number) {
+    const { generateInvoiceNumber } = require('../gst');
+    const invoiceNumber = generateInvoiceNumber(existing.id);
+    db.prepare('UPDATE orders SET invoice_number = ? WHERE id = ?').run(invoiceNumber, existing.id);
+  }
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(existing.id);
   res.json({ order: buildOrderObject(order) });
 });

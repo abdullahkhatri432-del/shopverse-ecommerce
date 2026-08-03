@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import ProductCard from '../components/ProductCard';
+import Seo from '../components/Seo';
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
   const category = searchParams.get('category') || '';
   const search = searchParams.get('search') || '';
   const sort = searchParams.get('sort') || 'newest';
+  const minPrice = searchParams.get('minPrice') || '';
   const maxPrice = searchParams.get('maxPrice') || '';
+  const inStock = searchParams.get('inStock') === '1';
 
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -29,7 +32,9 @@ export default function Products() {
     if (search) params.set('search', search);
     if (category) params.set('category', category);
     if (sort) params.set('sort', sort);
+    if (minPrice) params.set('minPrice', minPrice);
     if (maxPrice) params.set('maxPrice', maxPrice);
+    if (inStock) params.set('inStock', '1');
     api
       .get(`/products?${params.toString()}`)
       .then((d) => {
@@ -38,7 +43,18 @@ export default function Products() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [category, search, sort, maxPrice]);
+  }, [category, search, sort, minPrice, maxPrice, inStock]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = new URLSearchParams(searchParams);
+      if (localSearch.trim()) next.set('search', localSearch.trim());
+      else next.delete('search');
+      setSearchParams(next, { replace: true });
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localSearch]);
 
   const updateParam = (key, value) => {
     const next = new URLSearchParams(searchParams);
@@ -54,6 +70,10 @@ export default function Products() {
 
   return (
     <div className="container section">
+      <Seo
+        title="Shop - ShopVerse"
+        description="Browse electronics, fashion, home goods and more at ShopVerse."
+      />
       <h1 className="page-title">Shop</h1>
 
       <form onSubmit={handleSearchSubmit} className="search-bar">
@@ -87,6 +107,20 @@ export default function Products() {
             </button>
           ))}
 
+          <h3>Min price</h3>
+          <select
+            value={minPrice}
+            onChange={(e) => updateParam('minPrice', e.target.value)}
+            className="select-full"
+          >
+            <option value="">Any price</option>
+            <option value="100">₹100 & up</option>
+            <option value="500">₹500 & up</option>
+            <option value="1000">₹1,000 & up</option>
+            <option value="5000">₹5,000 & up</option>
+            <option value="10000">₹10,000 & up</option>
+          </select>
+
           <h3>Max price</h3>
           <select
             value={maxPrice}
@@ -94,13 +128,24 @@ export default function Products() {
             className="select-full"
           >
             <option value="">Any price</option>
-            <option value="25">Under $25</option>
-            <option value="50">Under $50</option>
-            <option value="100">Under $100</option>
-            <option value="250">Under $250</option>
-            <option value="500">Under $500</option>
-            <option value="1000">Under $1000</option>
+            <option value="25">Under ₹25</option>
+            <option value="50">Under ₹50</option>
+            <option value="100">Under ₹100</option>
+            <option value="250">Under ₹250</option>
+            <option value="500">Under ₹500</option>
+            <option value="1000">Under ₹1,000</option>
+            <option value="2500">Under ₹2,500</option>
+            <option value="5000">Under ₹5,000</option>
           </select>
+
+          <label className="filter-check">
+            <input
+              type="checkbox"
+              checked={inStock}
+              onChange={(e) => updateParam('inStock', e.target.checked ? '1' : '')}
+            />
+            <span>In stock only</span>
+          </label>
 
           <h3>Sort</h3>
           <select

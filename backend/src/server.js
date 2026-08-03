@@ -13,6 +13,8 @@ const orderRoutes = require('./routes/orders');
 const checkoutRoutes = require('./routes/checkout');
 const configRoutes = require('./routes/config');
 const adminRoutes = require('./routes/admin');
+const cartRoutes = require('./routes/cart');
+const shippingRoutes = require('./routes/shipping');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -66,6 +68,30 @@ app.use(
   })
 );
 
+const authAttemptLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts from this IP. Please wait a minute and try again.' },
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts from this IP. Please wait a minute.' },
+});
+
+const checkoutInitLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many checkout attempts. Please wait a moment and try again.' },
+});
+
 app.use(express.json({ limit: '100kb' }));
 
 app.get('/api/health', (req, res) => {
@@ -73,10 +99,15 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/config', configRoutes);
+app.post('/api/auth/login', authAttemptLimiter);
+app.post('/api/auth/register', registerLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.post('/api/checkout', checkoutInitLimiter);
 app.use('/api/checkout', checkoutRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/shipping', shippingRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.use('/uploads', express.static(uploadsDir, { maxAge: '7d' }));
@@ -89,6 +120,9 @@ app.use((err, req, res, next) => {
   console.error(err);
   if (err.type === 'entity.too.large') {
     return res.status(413).json({ error: 'Request payload too large' });
+  }
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Malformed JSON body' });
   }
   res.status(500).json({ error: 'Internal server error' });
 });

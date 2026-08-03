@@ -11,7 +11,7 @@ const SORTS = {
 };
 
 router.get('/', (req, res) => {
-  const { search, category, minPrice, maxPrice, sort, featured, limit, offset } = req.query;
+  const { search, category, minPrice, maxPrice, sort, featured, inStock, limit, offset } = req.query;
 
   const where = [];
   const params = [];
@@ -32,6 +32,9 @@ router.get('/', (req, res) => {
   if (maxPrice !== undefined && maxPrice !== '') {
     where.push('p.price_cents <= ?');
     params.push(Math.round(Number(maxPrice) * 100));
+  }
+  if (inStock === 'true' || inStock === '1') {
+    where.push('p.stock > 0');
   }
   if (featured === 'true' || featured === '1') {
     where.push('p.featured = 1');

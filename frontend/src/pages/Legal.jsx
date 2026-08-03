@@ -408,6 +408,53 @@ function LegalContent({ slug }) {
     );
   }
 
+  if (slug === 'contact') {
+    return (
+      <>
+        <Section title="Get in touch">
+          <p>
+            We're happy to help with orders, products, invoices and more. Support is available
+            Monday–Saturday, 9am–7pm IST.
+          </p>
+          <Subsection title="Contact details">
+            <p>
+              <strong>Email:</strong>{' '}
+              <a href={`mailto:${store.email || 'support@yourstore.com'}`}>
+                {store.email || 'support@yourstore.com'}
+              </a>
+              <br />
+              <strong>Phone:</strong>{' '}
+              <a href={`tel:${(store.phone || '+919000000000').replace(/\s/g, '')}`}>
+                {store.phone || '+91 90000 00000'}
+              </a>
+              <br />
+              <strong>Business address:</strong>{' '}
+              {store.address || 'Your Registered Address, City, State, PIN'}
+              <br />
+              <strong>Website:</strong> {store.website || 'www.yourstore.com'}
+            </p>
+          </Subsection>
+        </Section>
+        <Section title="For complaints & data-related concerns">
+          <p>
+            Complaints are handled by our designated Grievance Officer:
+          </p>
+          <p>
+            <strong>{officer.name || 'Your Name'}</strong>
+            <br />
+            Email: {officer.email || 'grievance@yourstore.com'}
+            <br />
+            Phone: {officer.phone || '+91 90000 00000'}
+          </p>
+          <p>
+            Complaints are acknowledged within <strong>48 hours</strong> and resolved within one
+            month. You may also reach the National Consumer Helpline at <strong>1915</strong>.
+          </p>
+        </Section>
+      </>
+    );
+  }
+
   return <p>This page could not be found.</p>;
 }
 
@@ -419,6 +466,7 @@ const TITLES = {
   cancellation: 'Cancellation Policy',
   grievance: 'Grievance Officer',
   seller: 'Seller Information',
+  contact: 'Contact Us',
 };
 
 export default function Legal({ slug }) {

@@ -1450,3 +1450,248 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- New: taxes, tracking, pincode, payments, footer ---------- */
+.product-tax-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted, #64748b);
+}
+
+.detail-tax-note {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted, #64748b);
+}
+
+.detail-meta {
+  margin: 10px 0 4px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.pincode-check {
+  margin-top: 14px;
+}
+
+.pincode-row {
+  display: flex;
+  gap: 8px;
+}
+
+.pincode-row input {
+  flex: 1;
+}
+
+.payment-methods {
+  margin: 16px 0;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.payment-option:has(input:checked) {
+  border-color: #4f46e5;
+  background: #eef2ff;
+}
+
+.tracking-steps {
+  list-style: none;
+  display: flex;
+  gap: 0;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.tracking-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  font-size: 11px;
+  color: #94a3b8;
+  gap: 6px;
+}
+
+.tracking-step::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+}
+
+.tracking-step:first-child::before {
+  display: none;
+}
+
+.tracking-step.done::before,
+.tracking-step.current::before {
+  background: #4f46e5;
+}
+
+.tracking-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 1;
+}
+
+.tracking-step.done .tracking-dot {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.tracking-step.current .tracking-dot {
+  background: #fff;
+  border: 2px solid #4f46e5;
+  color: #4f46e5;
+}
+
+.tracking-label {
+  max-width: 90px;
+}
+
+.order-eta {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #475569;
+}
+
+.order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.footer-grievance {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.footer-grievance a {
+  color: #c7d2fe;
+}
+
+.footer-grievance a:hover {
+  text-decoration: underline;
+}
+
+.filter-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.error-code {
+  font-size: 56px;
+  font-weight: 800;
+  color: #4f46e5;
+  line-height: 1;
+}
+
+.error-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.success-eta {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.notice-success {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+.notice-info {
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  color: #1e40af;
+}
+
+@media (max-width: 640px) {
+  .tracking-label {
+    font-size: 10px;
+    max-width: 70px;
+  }
+}
+
+/* ---------- Google sign-in ---------- */
+.google-button {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 4px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #94a3b8;
+  font-size: 13px;
+  margin: 14px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.admin-login {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.admin-login summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.admin-login .auth-form {
+  margin-top: 12px;
+}
+
+

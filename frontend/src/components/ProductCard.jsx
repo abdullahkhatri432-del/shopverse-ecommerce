@@ -40,6 +40,7 @@ export default function ProductCard({ product }) {
             {out ? 'Out of stock' : 'Add to cart'}
           </button>
         </div>
+        <p className="product-tax-note">Inclusive of all taxes (GST)</p>
       </div>
     </div>
   );

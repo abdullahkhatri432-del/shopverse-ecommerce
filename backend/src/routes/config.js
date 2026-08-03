@@ -7,9 +7,13 @@ const razorpayEnabled = () => !!(process.env.RAZORPAY_KEY_ID && process.env.RAZO
 router.get('/', (req, res) => {
   res.json({
     paymentProvider: razorpayEnabled() ? 'razorpay' : 'mock',
+    paymentMode: process.env.PAYMENT_MODE || (razorpayEnabled() ? 'test' : 'mock'),
     currency: process.env.CURRENCY || 'INR',
     razorpayEnabled: razorpayEnabled(),
     razorpayKeyId: process.env.RAZORPAY_KEY_ID || '',
+    codEnabled: process.env.COD_ENABLED !== 'false',
+    googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+    googleEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     store: {
       name: process.env.STORE_NAME || 'ShopVerse',
       legalName: process.env.STORE_LEGAL_NAME || 'Your Legal Business Name',

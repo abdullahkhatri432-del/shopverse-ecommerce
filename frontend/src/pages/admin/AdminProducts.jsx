@@ -10,6 +10,7 @@ const EMPTY = {
   category: 'general',
   stock: 0,
   featured: false,
+  countryOfOrigin: 'India',
 };
 
 export default function AdminProducts() {
@@ -54,6 +55,7 @@ export default function AdminProducts() {
       category: p.category,
       stock: p.stock,
       featured: p.featured,
+      countryOfOrigin: p.countryOfOrigin || 'India',
     });
   };
 
@@ -229,6 +231,14 @@ export default function AdminProducts() {
                 <input type="number" min="0" value={form.stock} onChange={set('stock')} />
               </label>
             </div>
+            <label className="field">
+              <span>Country of origin</span>
+              <input
+                value={form.countryOfOrigin}
+                onChange={set('countryOfOrigin')}
+                placeholder="India"
+              />
+            </label>
             <label className="checkbox-field">
               <input type="checkbox" checked={form.featured} onChange={set('featured')} />
               <span>Featured on home page</span>

@@ -1,13 +1,20 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { formatPrice } from '../lib/api';
+import { api, formatPrice } from '../lib/api';
+import Seo from '../components/Seo';
 
 export default function Cart() {
   const { items, count, subtotal, setQuantity, remove, clear } = useCart();
+  const [pincode, setPincode] = useState('');
+  const [checking, setChecking] = useState(false);
+  const [delivery, setDelivery] = useState(null);
+  const [deliveryError, setDeliveryError] = useState('');
 
   if (items.length === 0) {
     return (
       <div className="container section empty-state">
+        <Seo title="Your cart - ShopVerse" description="Your cart is empty." />
         <h1>Your cart is empty</h1>
         <p>Looks like you haven't added anything yet.</p>
         <Link to="/products" className="btn btn-primary btn-lg">
@@ -17,8 +24,28 @@ export default function Cart() {
     );
   }
 
+  const checkDelivery = async () => {
+    if (!/^[1-9][0-9]{5}$/.test(pincode.trim())) {
+      setDeliveryError('Enter a valid 6-digit Indian pincode.');
+      setDelivery(null);
+      return;
+    }
+    setChecking(true);
+    setDeliveryError('');
+    try {
+      const data = await api.post('/shipping/check', { pincode: pincode.trim() });
+      setDelivery(data);
+    } catch (err) {
+      setDeliveryError(err.message);
+      setDelivery(null);
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <div className="container section">
+      <Seo title="Your cart - ShopVerse" description="Review your cart and proceed to checkout." />
       <div className="section-head">
         <h1 className="page-title">Your cart ({count} item{count === 1 ? '' : 's'})</h1>
         <button className="link" onClick={clear}>
@@ -65,6 +92,7 @@ export default function Cart() {
               </div>
             </div>
           ))}
+          <p className="product-tax-note">All prices are inclusive of all taxes (GST).</p>
         </div>
         <div className="cart-summary">
           <h3>Order summary</h3>
@@ -80,6 +108,41 @@ export default function Cart() {
             <span>Total</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
+
+          <div className="pincode-check">
+            <label className="field">
+              <span>Check delivery pincode</span>
+              <div className="pincode-row">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="110001"
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={checkDelivery}
+                  disabled={checking}
+                >
+                  {checking ? '...' : 'Check'}
+                </button>
+              </div>
+            </label>
+            {deliveryError && <p className="notice notice-error">{deliveryError}</p>}
+            {delivery && delivery.serviceable && (
+              <p className="notice notice-success">
+                Deliverable to {pincode} in {delivery.etaDays.min}–{delivery.etaDays.max} business
+                days.
+              </p>
+            )}
+            {delivery && !delivery.serviceable && (
+              <p className="notice notice-warning">{delivery.error}</p>
+            )}
+          </div>
+
           <Link to="/checkout" className="btn btn-primary btn-lg btn-full">
             Proceed to checkout
           </Link>

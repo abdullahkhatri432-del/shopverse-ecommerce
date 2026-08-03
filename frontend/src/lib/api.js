@@ -64,8 +64,11 @@ export const api = {
 
 let siteConfig = {
   paymentProvider: 'mock',
+  paymentMode: 'mock',
   currency: 'INR',
   razorpayKeyId: '',
+  codEnabled: true,
+  googleClientId: '',
   store: {
     name: 'ShopVerse',
     legalName: '',

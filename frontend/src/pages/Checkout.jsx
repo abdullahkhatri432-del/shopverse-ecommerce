@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { api, formatPrice, getStore } from '../lib/api';
+import { api, formatPrice, getConfig, getStore } from '../lib/api';
 import { INDIA_STATES } from '../lib/india-states';
 import { useToast } from '../context/ToastContext';
+import Seo from '../components/Seo';
 
 function loadRazorpayScript() {
   return new Promise((resolve, reject) => {
@@ -32,9 +33,13 @@ export default function Checkout() {
     gstin: '',
     billingState: '',
   });
+  const [method, setMethod] = useState('online');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [priceChanged, setPriceChanged] = useState(false);
   const store = getStore();
+  const config = getConfig();
+  const codEnabled = config.codEnabled !== false;
 
   if (items.length === 0) {
     return (
@@ -106,6 +111,7 @@ export default function Checkout() {
     }
     setSubmitting(true);
     setError('');
+    setPriceChanged(false);
     try {
       const data = await api.post('/checkout', {
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
@@ -115,15 +121,25 @@ export default function Checkout() {
         companyName: form.companyName.trim(),
         gstin: form.gstin.trim(),
         billingState: form.billingState,
+        paymentMethod: method,
+        expectedTotalCents: subtotal,
       });
       if (data.paymentMethod === 'razorpay') {
         startRazorpay(data);
+      } else if (data.paymentMethod === 'cod') {
+        clear();
+        navigate(`/checkout/success?order=${data.orderId}&cod=1`);
       } else {
         clear();
         navigate(`/checkout/success?order=${data.orderId}&mock=1`);
       }
     } catch (err) {
-      setError(err.message);
+      if (err.status === 409 && err.message) {
+        setPriceChanged(true);
+        setError(err.message);
+      } else {
+        setError(err.message);
+      }
       setSubmitting(false);
     }
   };
@@ -193,11 +209,51 @@ export default function Checkout() {
               <p className="hint">GST (CGST+SGST / IGST) is shown on your invoice.</p>
             </label>
           </div>
+          {priceChanged && (
+            <div className="notice notice-warning">
+              Some prices in your cart changed. Please review your cart before continuing.
+            </div>
+          )}
           {error && <div className="notice notice-error">{error}</div>}
+
+          <div className="payment-methods">
+            <h3>Payment method</h3>
+            <label className="payment-option">
+              <input
+                type="radio"
+                name="method"
+                value="online"
+                checked={method === 'online'}
+                onChange={() => setMethod('online')}
+              />
+              <span>Pay online (Razorpay / UPI / Cards / Net Banking)</span>
+            </label>
+            {codEnabled && (
+              <label className="payment-option">
+                <input
+                  type="radio"
+                  name="method"
+                  value="cod"
+                  checked={method === 'cod'}
+                  onChange={() => setMethod('cod')}
+                />
+                <span>Cash on Delivery</span>
+              </label>
+            )}
+          </div>
+
           <button className="btn btn-primary btn-lg btn-full" disabled={submitting}>
-            {submitting ? 'Redirecting to payment...' : `Pay ${formatPrice(subtotal)}`}
+            {submitting
+              ? 'Placing order...'
+              : method === 'cod'
+              ? `Place order · Pay ${formatPrice(subtotal)} on delivery`
+              : `Pay ${formatPrice(subtotal)}`}
           </button>
-          <p className="hint">Secure checkout. Your payment is processed by Razorpay.</p>
+          <p className="hint">
+            {method === 'cod'
+              ? `Pay ${formatPrice(subtotal)} in cash when your order is delivered.`
+              : 'Secure checkout. Your payment is processed by Razorpay.'}
+          </p>
         </div>
         <div className="cart-summary">
           <h3>Order summary</h3>
@@ -213,6 +269,7 @@ export default function Checkout() {
             <span>Total</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
+          <p className="product-tax-note">Inclusive of all taxes (GST). Free shipping.</p>
         </div>
       </form>
     </div>

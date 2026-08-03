@@ -2,12 +2,28 @@ import { useEffect, useState } from 'react';
 import { api, formatPrice } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 
-const STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
+const STATUSES = [
+  'pending',
+  'paid',
+  'packed',
+  'shipped',
+  'out_for_delivery',
+  'delivered',
+  'return_requested',
+  'return_approved',
+  'returned',
+  'cancelled',
+];
 const STATUS_LABELS = {
   pending: 'Pending',
   paid: 'Paid',
+  packed: 'Packed',
   shipped: 'Shipped',
+  out_for_delivery: 'Out for delivery',
   delivered: 'Delivered',
+  return_requested: 'Return requested',
+  return_approved: 'Return approved',
+  returned: 'Returned',
   cancelled: 'Cancelled',
 };
 

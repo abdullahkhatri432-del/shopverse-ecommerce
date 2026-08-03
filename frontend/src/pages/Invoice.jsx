@@ -34,8 +34,16 @@ export default function Invoice() {
             <Link to="/account" className="btn btn-outline">
               ← Back to orders
             </Link>
-            <button className="btn btn-primary" onClick={() => window.print()}>
-              Print / Save as PDF
+            <a
+              href={`/api/orders/${orderId}/invoice.pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-primary"
+            >
+              Download PDF
+            </a>
+            <button className="btn btn-outline" onClick={() => window.print()}>
+              Print
             </button>
           </div>
           <InvoiceView invoice={invoice} store={getStore()} />

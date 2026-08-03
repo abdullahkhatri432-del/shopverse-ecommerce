@@ -2,14 +2,12 @@ const express = require('express');
 const crypto = require('node:crypto');
 const { db } = require('../db');
 const { validateGstin, isValidState, generateInvoiceNumber } = require('../gst');
+const { sendOrderConfirmation, sendAdminNewOrder } = require('../mailer');
+const { razorpayEnabled, mockAllowed, onlineAvailable } = require('../payments');
 
 const router = express.Router();
 
 const currency = process.env.CURRENCY || 'INR';
-
-function razorpayEnabled() {
-  return !!(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
-}
 
 function getRazorpay() {
   const Razorpay = require('razorpay');
@@ -22,12 +20,13 @@ function getRazorpay() {
 router.get('/config', (req, res) => {
   res.json({
     paymentProvider: razorpayEnabled() ? 'razorpay' : 'mock',
+    paymentMode: process.env.PAYMENT_MODE || (razorpayEnabled() ? 'test' : 'mock'),
     currency,
     razorpayEnabled: razorpayEnabled(),
     razorpayKeyId: process.env.RAZORPAY_KEY_ID || '',
+    codEnabled: process.env.COD_ENABLED !== 'false',
   });
 });
-
 router.post('/', async (req, res) => {
   const {
     items,
@@ -37,6 +36,8 @@ router.post('/', async (req, res) => {
     companyName,
     gstin,
     billingState,
+    paymentMethod,
+    expectedTotalCents,
   } = req.body || {};
 
   if (!Array.isArray(items) || items.length === 0) {
@@ -53,6 +54,14 @@ router.post('/', async (req, res) => {
   const stateClean = String(billingState || '').trim().toUpperCase();
   if (stateClean && !isValidState(stateClean)) {
     return res.status(400).json({ error: 'Invalid billing state code' });
+  }
+
+  const method = paymentMethod === 'cod' ? 'cod' : 'online';
+  if (method === 'online' && !onlineAvailable()) {
+    return res.status(503).json({
+      error:
+        'Online payments are not available in this environment. Please use Cash on Delivery or contact support.',
+    });
   }
 
   const getProduct = db.prepare('SELECT * FROM products WHERE id = ?');
@@ -83,6 +92,18 @@ router.post('/', async (req, res) => {
 
   const totalCents = orderItems.reduce((sum, i) => sum + i.priceCents * i.quantity, 0);
 
+  if (
+    expectedTotalCents !== undefined &&
+    expectedTotalCents !== null &&
+    Number(expectedTotalCents) !== totalCents
+  ) {
+    return res.status(409).json({
+      error: 'Some prices changed since you added items to your cart. Please review your cart.',
+      priceChanged: true,
+      newTotalCents: totalCents,
+    });
+  }
+
   for (const [productId, qty] of quantities) {
     db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?').run(qty, productId);
   }
@@ -93,7 +114,7 @@ router.post('/', async (req, res) => {
   `);
   const orderId = insertOrder.run(
     totalCents,
-    razorpayEnabled() ? 'razorpay' : 'mock',
+    method === 'cod' ? 'cod' : razorpayEnabled() ? 'razorpay' : 'mock',
     String(customerName).trim(),
     String(customerEmail).trim(),
     String(customerAddress || '').trim(),
@@ -108,6 +129,20 @@ router.post('/', async (req, res) => {
   `);
   for (const i of orderItems) {
     insertItem.run(orderId, i.productId, i.name, i.priceCents, i.quantity, i.category);
+  }
+
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+  sendOrderConfirmation(order, orderItems);
+  sendAdminNewOrder(order, orderItems);
+
+  if (method === 'cod') {
+    return res.status(201).json({
+      orderId,
+      paymentMethod: 'cod',
+      amount: totalCents,
+      currency,
+      status: 'pending',
+    });
   }
 
   if (!razorpayEnabled()) {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import ProductCard from '../components/ProductCard';
+import Seo from '../components/Seo';
 
 export default function Home() {
   const [featured, setFeatured] = useState([]);
@@ -20,6 +21,10 @@ export default function Home() {
 
   return (
     <div>
+      <Seo
+        title="ShopVerse - Your Online Store"
+        description="Shop the latest electronics, fashion and home goods at ShopVerse."
+      />
       <section className="hero">
         <div className="hero-inner">
           <h1>Everything you love, delivered.</h1>
