@@ -12,6 +12,7 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 - **GST invoices** — printable + **PDF download** tax invoices with CGST/SGST/IGST breakdown, invoice numbers, and buyer/seller details
 - **Order tracking** — status stepper (placed → packed → shipped → out for delivery → delivered), estimated delivery dates, order cancellation, and **return/refund requests** within 7 days of delivery
 - **Wishlist & recently viewed** — save products for later (wishlist page + heart on every card), and a "Recently viewed" row on the home page
+- **Promotional banners** — an auto-playing hero **slideshow** of offers (arrows + dots, pauses on hover, respects reduced-motion), sliding **product carousels** (Featured, Top picks, Recently viewed), and a big **Deals-of-the-day** offer banner with a live countdown
 - **User-friendly polish** — loading skeletons, friendly empty states, page transitions, breadcrumbs, hover micro-interactions, a **mobile bottom nav**, focus-visible + reduced-motion accessibility, and a trust strip (free delivery, COD, returns)
 - **Legal & compliance** — Terms, Privacy (DPDP-ready), Refund, Shipping, Cancellation, Grievance Officer, Seller Info and Contact pages, grievance officer details in the footer, plus a cookie/local-storage consent banner
 - **User accounts** — secure **Google sign-in** (verified, duplicate-free) and view order history + GST invoices

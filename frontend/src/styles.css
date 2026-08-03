@@ -2092,4 +2092,364 @@ textarea:focus {
   }
 }
 
+/* ---------- Hero banner slider ---------- */
+.banner-slider {
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-viewport {
+  overflow: hidden;
+}
+
+.banner-track {
+  display: flex;
+  transition: transform 0.55s ease;
+}
+
+.banner-slide {
+  flex: 0 0 100%;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.banner-slide.theme-indigo {
+  background: linear-gradient(120deg, #4338ca, #7c3aed);
+}
+
+.banner-slide.theme-violet {
+  background: linear-gradient(120deg, #6d28d9, #a855f7);
+}
+
+.banner-slide.theme-emerald {
+  background: linear-gradient(120deg, #047857, #10b981);
+}
+
+.banner-slide.theme-amber {
+  background: linear-gradient(120deg, #b45309, #f59e0b);
+}
+
+.banner-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 48px 20px;
+  color: #fff;
+}
+
+.banner-tag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.banner-title {
+  font-size: 44px;
+  font-weight: 800;
+  margin: 14px 0 8px;
+  max-width: 560px;
+  line-height: 1.1;
+}
+
+.banner-subtitle {
+  font-size: 18px;
+  opacity: 0.92;
+  margin: 0 0 24px;
+  max-width: 480px;
+}
+
+.banner-cta {
+  background: #fff;
+  color: #1e293b;
+}
+
+.banner-cta:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.banner-art {
+  position: absolute;
+  inset: 0;
+  color: #fff;
+}
+
+.banner-art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.banner-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+}
+
+.banner-prev {
+  left: 16px;
+}
+
+.banner-next {
+  right: 16px;
+}
+
+.banner-dots {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  z-index: 3;
+}
+
+.banner-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.banner-dot.active {
+  background: #fff;
+  width: 22px;
+}
+
+/* ---------- Product slider (carousel) ---------- */
+.slider {
+  position: relative;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slider-track {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px;
+  flex: 1;
+  scrollbar-width: none;
+}
+
+.slider-track::-webkit-scrollbar {
+  display: none;
+}
+
+.slider-track .product-card {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+}
+
+.slider-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.slider-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* ---------- Offer banner (big middle screen) ---------- */
+.offer-banner {
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(120deg, #1e1b4b, #4f46e5 55%, #7c3aed);
+  color: #fff;
+}
+
+.offer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 48px;
+  flex-wrap: wrap;
+}
+
+.offer-tag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.offer-title {
+  font-size: 36px;
+  font-weight: 800;
+  margin: 12px 0 8px;
+  line-height: 1.15;
+}
+
+.offer-sub {
+  opacity: 0.9;
+  margin: 0 0 24px;
+  max-width: 480px;
+  font-size: 17px;
+}
+
+.btn-light {
+  background: #fff;
+  color: #1e293b;
+}
+
+.btn-light:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.offer-count {
+  text-align: center;
+}
+
+.offer-count-label {
+  display: block;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+  margin-bottom: 10px;
+}
+
+.offer-clock {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.offer-unit {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  padding: 14px 18px;
+  text-align: center;
+  min-width: 76px;
+}
+
+.offer-unit strong {
+  display: block;
+  font-size: 32px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.offer-unit span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+}
+
+.offer-colon {
+  font-size: 28px;
+  font-weight: 800;
+  padding-top: 12px;
+  opacity: 0.6;
+}
+
+@media (max-width: 900px) {
+  .banner-title {
+    font-size: 32px;
+  }
+
+  .banner-slide {
+    min-height: 320px;
+  }
+
+  .offer-inner {
+    padding: 36px 24px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .banner-title {
+    font-size: 26px;
+  }
+
+  .banner-subtitle {
+    font-size: 15px;
+  }
+
+  .banner-slide {
+    min-height: 300px;
+  }
+
+  .banner-prev {
+    left: 8px;
+  }
+
+  .banner-next {
+    right: 8px;
+  }
+
+  .slider-track .product-card {
+    flex-basis: 240px;
+  }
+
+  .offer-title {
+    font-size: 26px;
+  }
+
+  .offer-clock {
+    gap: 6px;
+  }
+
+  .offer-unit {
+    min-width: 64px;
+    padding: 10px 12px;
+  }
+
+  .offer-unit strong {
+    font-size: 24px;
+  }
+
+  .slider-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+}
+
 

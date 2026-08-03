@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
-import ProductCard from '../components/ProductCard';
+import BannerSlider from '../components/BannerSlider';
+import OfferBanner from '../components/OfferBanner';
+import ProductSlider from '../components/ProductSlider';
 import Skeleton from '../components/Skeleton';
 import Seo from '../components/Seo';
 import { getRecentlyViewed } from '../lib/recentlyViewed';
@@ -13,16 +15,39 @@ const TRUST = [
   { title: 'GST invoices', sub: 'On every paid order' },
 ];
 
+function SliderSkeleton() {
+  return (
+    <div className="slider" aria-hidden="true">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div className="product-card" key={i} style={{ width: 280, flexShrink: 0 }}>
+          <Skeleton style={{ aspectRatio: '4 / 3' }} />
+          <div className="product-body">
+            <Skeleton style={{ width: '40%', height: 12 }} />
+            <Skeleton style={{ width: '80%', height: 16 }} />
+            <Skeleton style={{ width: '60%', height: 16 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   const [featured, setFeatured] = useState([]);
+  const [topPicks, setTopPicks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recent, setRecent] = useState([]);
 
   useEffect(() => {
-    Promise.all([api.get('/products/featured'), api.get('/products/categories')])
-      .then(([f, c]) => {
+    Promise.all([
+      api.get('/products/featured'),
+      api.get('/products?sort=price_desc&limit=10'),
+      api.get('/products/categories'),
+    ])
+      .then(([f, t, c]) => {
         setFeatured(f.products);
+        setTopPicks(t.products);
         setCategories(c.categories);
       })
       .catch(() => {})
@@ -30,7 +55,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    setRecent(getRecentlyViewed().slice(0, 8));
+    setRecent(getRecentlyViewed().slice(0, 10));
   }, []);
 
   return (
@@ -39,22 +64,7 @@ export default function Home() {
         title="ShopVerse - Your Online Store"
         description="Shop the latest electronics, fashion and home goods at ShopVerse."
       />
-      <section className="hero">
-        <div className="hero-inner">
-          <h1>Everything you love, delivered.</h1>
-          <p>
-            Discover curated electronics, accessories, home goods and more — all in one place.
-          </p>
-          <div className="hero-actions">
-            <Link to="/products" className="btn btn-primary btn-lg">
-              Shop now
-            </Link>
-            <Link to="/products" className="btn btn-outline btn-lg">
-              Browse categories
-            </Link>
-          </div>
-        </div>
-      </section>
+      <BannerSlider />
 
       <section className="container section trust-strip" aria-label="Store highlights">
         {TRUST.map((t) => (
@@ -77,49 +87,30 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="container section">
-        <div className="section-head">
-          <h2 className="section-title">Featured products</h2>
-          <Link to="/products" className="link">
-            View all
-          </Link>
+      {loading ? (
+        <div className="container section">
+          <Skeleton style={{ width: 200, height: 24, marginBottom: 20 }} />
+          <SliderSkeleton />
         </div>
-        {loading ? (
-          <div className="product-grid" aria-hidden="true">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div className="product-card" key={i}>
-                <Skeleton style={{ aspectRatio: '4 / 3' }} />
-                <div className="product-body">
-                  <Skeleton style={{ width: '40%', height: 12 }} />
-                  <Skeleton style={{ width: '80%', height: 16 }} />
-                  <Skeleton style={{ width: '60%', height: 16 }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="product-grid">
-            {featured.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        )}
-      </section>
+      ) : (
+        <ProductSlider title="Featured products" viewAll="/products" products={featured} />
+      )}
+
+      <div className="container section">
+        <OfferBanner />
+      </div>
+
+      {loading ? (
+        <div className="container section">
+          <Skeleton style={{ width: 200, height: 24, marginBottom: 20 }} />
+          <SliderSkeleton />
+        </div>
+      ) : (
+        <ProductSlider title="Top picks" viewAll="/products?sort=price_desc" products={topPicks} />
+      )}
 
       {recent.length > 0 && (
-        <section className="container section">
-          <div className="section-head">
-            <h2 className="section-title">Recently viewed</h2>
-            <Link to="/products" className="link">
-              Shop more
-            </Link>
-          </div>
-          <div className="product-grid">
-            {recent.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </section>
+        <ProductSlider title="Recently viewed" viewAll="/products" products={recent} />
       )}
     </div>
   );
