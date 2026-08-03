@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('node:fs');
 const path = require('node:path');
 const express = require('express');
 const cors = require('cors');
@@ -13,6 +14,9 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+
 app.use(cors());
 app.use(express.json());
 
@@ -26,7 +30,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/admin', adminRoutes);
 
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/uploads', express.static(uploadsDir));
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });

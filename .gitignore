@@ -21,6 +21,9 @@ frontend/dist/
 npm-debug.log*
 vite.log
 
+# Uploaded product images
+backend/uploads/
+
 # OS
 .DS_Store
 Thumbs.db

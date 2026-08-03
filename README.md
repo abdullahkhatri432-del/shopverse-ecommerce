@@ -10,7 +10,7 @@ A fully functional e-commerce website built with a **React** frontend and a **No
 - **Checkout** — shipping details, order summary, and payment
 - **Payments** — Razorpay Checkout (test mode) with a built-in **mock checkout** fallback that works with zero configuration
 - **User accounts** — register, log in (JWT), and view order history
-- **Admin panel** — add/edit/delete products, manage order statuses
+- **Admin panel** — add/edit/delete products (with image upload), manage order statuses
 - **SQLite database** — no external database server required (Node's built-in `node:sqlite`)
 
 ## Tech stack
@@ -74,6 +74,10 @@ Open http://localhost:5173.
 
 > The Vite dev server proxies `/api` requests to the backend, so no CORS config is needed in development.
 
+### Product images
+
+Products can use an external image URL **or** a photo uploaded from the admin panel. Uploads are stored in `backend/uploads/` and served at `/uploads/<file>`. In development, Vite proxies `/uploads` to the backend as well.
+
 ## Demo accounts
 
 Seeded by `npm run seed`:
@@ -121,6 +125,7 @@ The order is confirmed only after the payment signature is verified server-side 
 | POST   | `/api/admin/products`           | Create product                  | Admin    |
 | PUT    | `/api/admin/products/:id`       | Update product                  | Admin    |
 | DELETE | `/api/admin/products/:id`       | Delete product                  | Admin    |
+| POST   | `/api/admin/upload`             | Upload a product image (multipart)| Admin  |
 | GET    | `/api/admin/orders`             | All orders                      | Admin    |
 | PATCH  | `/api/admin/orders/:id/status`  | Update order status             | Admin    |
 

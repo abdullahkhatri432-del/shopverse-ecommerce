@@ -40,6 +40,26 @@ export const api = {
   put: (path, body, opts) => request(path, { method: 'PUT', body, ...opts }),
   patch: (path, body, opts) => request(path, { method: 'PATCH', body, ...opts }),
   del: (path, opts) => request(path, { method: 'DELETE', ...opts }),
+  upload: async (path, file, opts) => {
+    const headers = {};
+    if (opts?.auth) {
+      const token = getToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+    }
+    const body = new FormData();
+    body.append('image', file);
+    const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body });
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+    if (!res.ok) {
+      throw new Error((data && data.error) || 'Upload failed');
+    }
+    return data;
+  },
 };
 
 let siteConfig = {

@@ -1,4 +1,7 @@
 const express = require('express');
+const fs = require('node:fs');
+const path = require('node:path');
+const multer = require('multer');
 const { db, toProduct } = require('../db');
 const { requireAuth, requireAdmin } = require('../auth');
 const { buildOrderObject } = require('./orders');
@@ -6,6 +9,36 @@ const { buildOrderObject } = require('./orders');
 const router = express.Router();
 
 router.use(requireAuth, requireAdmin);
+
+const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadsDir),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (/^image\/(png|jpe?g|gif|webp)$/.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Only image files are allowed (png, jpg, gif, webp)'));
+  },
+});
+
+router.post('/upload', (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+    res.status(201).json({ url: '/uploads/' + req.file.filename });
+  });
+});
 
 router.get('/products', (req, res) => {
   const rows = db.prepare('SELECT * FROM products ORDER BY created_at DESC').all();

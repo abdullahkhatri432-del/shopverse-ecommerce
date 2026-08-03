@@ -18,6 +18,7 @@ export default function AdminProducts() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const { push } = useToast();
 
   const load = () => {
@@ -52,6 +53,22 @@ export default function AdminProducts() {
   const set = (key) => (e) => {
     const value = key === 'featured' ? e.target.checked : e.target.value;
     setForm((f) => ({ ...f, [key]: value }));
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const data = await api.upload('/admin/upload', file, { auth: true });
+      setForm((f) => ({ ...f, imageUrl: data.url }));
+      push('Image uploaded');
+    } catch (err) {
+      push(err.message, 'error');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -153,7 +170,7 @@ export default function AdminProducts() {
               <textarea value={form.description} onChange={set('description')} rows={3} />
             </label>
             <label className="field">
-              <span>Price (USD)</span>
+              <span>Price</span>
               <input
                 type="number"
                 step="0.01"
@@ -163,9 +180,31 @@ export default function AdminProducts() {
                 required
               />
             </label>
+            <div className="field">
+              <span>Product image</span>
+              {form.imageUrl && (
+                <img
+                  src={form.imageUrl}
+                  alt="Preview"
+                  className="image-upload-preview"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              )}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/gif,image/webp"
+                onChange={handleImageUpload}
+                disabled={uploading}
+              />
+              <span className="hint">
+                {uploading ? 'Uploading...' : 'Upload a photo, or paste an image URL below.'}
+              </span>
+            </div>
             <label className="field">
               <span>Image URL</span>
-              <input value={form.imageUrl} onChange={set('imageUrl')} placeholder="https://..." />
+              <input value={form.imageUrl} onChange={set('imageUrl')} placeholder="https://... or /uploads/..." />
             </label>
             <div className="field-row">
               <label className="field">

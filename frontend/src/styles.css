@@ -511,7 +511,18 @@ textarea {
   background: var(--bg);
   color: var(--text);
   outline: none;
+  width: 100%;
+  box-sizing: border-box;
   transition: border-color 0.15s ease;
+}
+
+input[type='checkbox'] {
+  width: auto;
+}
+
+input[type='file'] {
+  padding: 8px;
+  cursor: pointer;
 }
 
 input:focus,
@@ -536,6 +547,15 @@ textarea:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.image-upload-preview {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .checkbox-field {
