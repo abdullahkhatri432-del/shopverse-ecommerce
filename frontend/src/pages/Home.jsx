@@ -7,6 +7,7 @@ import ProductSlider from '../components/ProductSlider';
 import Skeleton from '../components/Skeleton';
 import Seo from '../components/Seo';
 import StarRating from '../components/StarRating';
+import ProductCard from '../components/ProductCard';
 import { getRecentlyViewed } from '../lib/recentlyViewed';
 
 const TRUST = [
